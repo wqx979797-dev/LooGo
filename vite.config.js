@@ -10,9 +10,8 @@ export default defineConfig({
   base: './',
   build: {
     outDir: 'docs',
-    minify: false,
-    sourcemap: true,
-    mode: 'development'
+    minify: true,
+    sourcemap: false
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom', 'leaflet', 'react-leaflet', 'lucide-react']
