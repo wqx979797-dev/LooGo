@@ -7,7 +7,7 @@ export default defineConfig({
     port: 5173,
     host: true
   },
-  base: './',
+  base: 'https://wqx979797-dev.github.io/LooGo/',
   build: {
     outDir: 'docs',
     minify: true,
