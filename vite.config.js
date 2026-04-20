@@ -7,10 +7,18 @@ export default defineConfig({
     port: 5173,
     host: true
   },
-  base: 'https://wqx979797-dev.github.io/LooGo/',
+  base: './',
   build: {
     outDir: 'docs',
     minify: true,
-    sourcemap: false
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: undefined
+      }
+    }
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom', 'leaflet', 'react-leaflet', 'lucide-react']
   }
 })
