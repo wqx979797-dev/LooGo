@@ -9,7 +9,7 @@ export default defineConfig({
   },
   base: './',
   build: {
-    outDir: 'build',
+    outDir: 'docs',
     minify: true,
     sourcemap: false,
     rollupOptions: {
