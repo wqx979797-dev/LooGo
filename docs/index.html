@@ -8,6 +8,32 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <title>宠伴 - 遛宠路线分享平台</title>
+    <script>
+      // 阻止加载 @vite/client
+      const originalFetch = window.fetch;
+      window.fetch = function(url, options) {
+        if (url.includes('@vite/client')) {
+          return Promise.resolve(new Response('{}', { status: 200 }));
+        }
+        return originalFetch(url, options);
+      };
+      
+      // 阻止加载 @vite/client via script tags
+      const originalCreateElement = document.createElement;
+      document.createElement = function(tagName) {
+        const element = originalCreateElement.call(this, tagName);
+        if (tagName === 'script') {
+          Object.defineProperty(element, 'src', {
+            set: function(value) {
+              if (!value.includes('@vite/client')) {
+                this.setAttribute('src', value);
+              }
+            }
+          });
+        }
+        return element;
+      };
+    </script>
     <script type="module" crossorigin src="./assets/index-BKVZekXr.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-BqLOZYJC.css">
   </head>
