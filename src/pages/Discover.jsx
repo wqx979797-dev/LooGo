@@ -95,6 +95,10 @@ export default function Discover() {
     }))
   }
 
+  const publishPost = () => {
+    alert('发布入口已响应：正式版会打开图文/路线打卡编辑器。')
+  }
+
   return (
     <div className="min-h-screen pb-4">
       <header className="sticky top-0 z-20 bg-light/90 backdrop-blur-xl px-4 pt-4 pb-3 border-b border-orange-100">
@@ -165,7 +169,10 @@ export default function Discover() {
                   placeholder="分享今天的遛宠路线和可爱瞬间..."
                   className="flex-1 bg-cream rounded-full px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25"
                 />
-                <button className="w-11 h-11 rounded-2xl bg-primary flex items-center justify-center text-white shadow-sm active:scale-95 transition-transform">
+                <button
+                  onClick={publishPost}
+                  className="w-11 h-11 rounded-2xl bg-primary flex items-center justify-center text-white shadow-sm active:scale-95 transition-transform"
+                >
                   <Send size={18} />
                 </button>
               </div>
@@ -195,7 +202,10 @@ export default function Discover() {
                     <Heart size={18} className={likedPosts[post.id] ? 'fill-current' : ''} />
                     <span className="text-sm">{post.likes + (likedPosts[post.id] ? 1 : 0)}</span>
                   </button>
-                  <button className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => alert('评论面板已响应：正式版会打开评论详情。')}
+                    className="flex items-center gap-1.5"
+                  >
                     <MessageCircle size={18} />
                     <span className="text-sm">{post.comments}</span>
                   </button>

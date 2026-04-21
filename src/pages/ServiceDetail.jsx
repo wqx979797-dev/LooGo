@@ -9,6 +9,7 @@ export default function ServiceDetail() {
   const [selectedDate, setSelectedDate] = useState(null)
   const [selectedTime, setSelectedTime] = useState(null)
   const [showBooking, setShowBooking] = useState(false)
+  const [followed, setFollowed] = useState(false)
 
   if (!service) {
     return (
@@ -82,8 +83,13 @@ export default function ServiceDetail() {
                 已完成 256 次服务
               </p>
             </div>
-            <button className="px-3 py-1.5 border border-primary text-primary text-sm rounded-full">
-              关注
+            <button
+              onClick={() => setFollowed(!followed)}
+              className={`px-3 py-1.5 border text-sm rounded-full ${
+                followed ? 'border-blush bg-blush text-primary' : 'border-primary text-primary'
+              }`}
+            >
+              {followed ? '已关注' : '关注'}
             </button>
           </div>
         </div>
@@ -180,12 +186,19 @@ export default function ServiceDetail() {
           <p className="text-xs text-gray-500">{service.type === 'boarding' ? '/天' : '/次'}</p>
         </div>
         <button
-          onClick={() => setShowBooking(true)}
+          onClick={() => {
+            setSelectedDate(prev => prev || dates[0].full)
+            setSelectedTime(prev => prev || times[0])
+            setShowBooking(true)
+          }}
           className="flex-1 py-3 bg-primary text-white rounded-full font-semibold"
         >
           立即预约
         </button>
-        <button className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+        <button
+          onClick={() => alert(`已为你打开与 ${service.provider.name} 的咨询入口，正式版将接入 IM。`)}
+          className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center"
+        >
           <MessageCircle size={20} className="text-gray-600" />
         </button>
       </div>

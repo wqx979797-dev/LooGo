@@ -4,6 +4,9 @@ import { currentUser, achievements, posts } from '../data/mockData'
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState('posts')
+  const handleMenu = (label) => {
+    alert(`${label} 已响应：正式版会进入对应页面。`)
+  }
 
   const tabs = [
     { id: 'posts', label: '动态', icon: MessageCircle },
@@ -16,7 +19,10 @@ export default function Profile() {
       <header className="bg-gradient-to-r from-primary to-orange-400 px-4 pt-8 pb-20 text-white">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-bold">我的</h1>
-          <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+          <button
+            onClick={() => handleMenu('设置')}
+            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+          >
             <Settings size={22} />
           </button>
         </div>
@@ -70,7 +76,10 @@ export default function Profile() {
                 <p className="text-xs text-gray-500">{pet.breed}</p>
               </div>
             ))}
-            <button className="flex-shrink-0 w-16 h-16 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:border-primary hover:text-primary transition-colors">
+            <button
+              onClick={() => handleMenu('添加宠物')}
+              className="flex-shrink-0 w-16 h-16 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:border-primary hover:text-primary transition-colors"
+            >
               <span className="text-xl">+</span>
             </button>
           </div>
@@ -170,7 +179,11 @@ export default function Profile() {
           { icon: '🔔', label: '消息通知', path: '/notifications' },
           { icon: '❓', label: '帮助与反馈', path: '/help' }
         ].map((item, idx) => (
-          <button key={idx} className="w-full bg-white rounded-xl p-4 flex items-center justify-between">
+          <button
+            key={idx}
+            onClick={() => handleMenu(item.label)}
+            className="w-full bg-white rounded-xl p-4 flex items-center justify-between"
+          >
             <div className="flex items-center gap-3">
               <span className="text-xl">{item.icon}</span>
               <span className="font-medium text-sm">{item.label}</span>

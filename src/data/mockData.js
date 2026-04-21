@@ -142,6 +142,16 @@ export const checkins = [
 
 export const services = [
   {
+    id: 'svc5',
+    title: '临时代遛服务',
+    description: '加班、雨天、临时出门不方便？认证遛宠师上门接宠，记录完整遛宠轨迹并回传照片',
+    price: 39,
+    provider: { id: 'prov5', name: 'LooGo 代遛小队', rating: 4.9, avatar: 'https://api.dicebear.com/7.x/shapes/svg?seed=prov5' },
+    type: 'walk',
+    duration: 30,
+    image: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=400&q=80'
+  },
+  {
     id: 'svc1',
     title: '专业宠物洗澡美容',
     description: '包括洗澡、吹干、修剪指甲、清理耳道等专业服务',

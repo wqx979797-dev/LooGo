@@ -11,6 +11,8 @@ export default function RouteDetail() {
   const [saved, setSaved] = useState(false)
   const [mapReady, setMapReady] = useState(false)
   const [showPublishModal, setShowPublishModal] = useState(false)
+  const [followed, setFollowed] = useState(false)
+  const [likedComments, setLikedComments] = useState({})
 
   useEffect(() => {
     setTimeout(() => setMapReady(true), 100)
@@ -30,6 +32,20 @@ export default function RouteDetail() {
     setShowPublishModal(true)
   }
 
+  const shareRoute = async () => {
+    const shareText = `${route.title}：${route.description}`
+    if (navigator.share) {
+      await navigator.share({
+        title: route.title,
+        text: shareText,
+        url: window.location.href
+      })
+      return
+    }
+    await navigator.clipboard?.writeText(window.location.href)
+    alert('路线链接已复制，可以分享给好友啦！')
+  }
+
   return (
     <div className="min-h-screen pb-20">
       <div className="relative">
@@ -42,7 +58,10 @@ export default function RouteDetail() {
           <ChevronLeft size={20} />
         </Link>
 
-        <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
+        <button
+          onClick={shareRoute}
+          className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 flex items-center justify-center"
+        >
           <Share2 size={18} />
         </button>
 
@@ -63,7 +82,14 @@ export default function RouteDetail() {
               <p className="font-medium">{route.creator.name}</p>
               <p className="text-xs text-gray-500">路线创建者</p>
             </div>
-            <button className="px-4 py-1.5 bg-primary text-white text-sm rounded-full">关注</button>
+            <button
+              onClick={() => setFollowed(!followed)}
+              className={`px-4 py-1.5 text-sm rounded-full ${
+                followed ? 'bg-blush text-primary' : 'bg-primary text-white'
+              }`}
+            >
+              {followed ? '已关注' : '关注'}
+            </button>
           </div>
           <p className="text-sm text-gray-600">{route.description}</p>
         </div>
@@ -121,7 +147,12 @@ export default function RouteDetail() {
         <div className="bg-white rounded-2xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold">评论 ({route.comments})</h3>
-            <button className="text-primary text-sm">查看全部</button>
+            <button
+              onClick={() => alert('当前 demo 已展示精选评论，完整评论页后续接入。')}
+              className="text-primary text-sm"
+            >
+              查看全部
+            </button>
           </div>
           <div className="space-y-3">
             {[
@@ -136,9 +167,14 @@ export default function RouteDetail() {
                     <span className="text-xs text-gray-400">{comment.time}</span>
                   </div>
                   <p className="text-sm text-gray-600 mt-1">{comment.content}</p>
-                  <button className="flex items-center gap-1 mt-2 text-gray-400 hover:text-red-500">
-                    <Heart size={14} />
-                    <span className="text-xs">{comment.likes}</span>
+                  <button
+                    onClick={() => setLikedComments(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                    className={`flex items-center gap-1 mt-2 ${
+                      likedComments[idx] ? 'text-primary' : 'text-gray-400 hover:text-red-500'
+                    }`}
+                  >
+                    <Heart size={14} className={likedComments[idx] ? 'fill-current' : ''} />
+                    <span className="text-xs">{comment.likes + (likedComments[idx] ? 1 : 0)}</span>
                   </button>
                 </div>
               </div>

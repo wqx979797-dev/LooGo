@@ -5,6 +5,7 @@ import { services } from '../data/mockData'
 
 const serviceTypes = [
   { id: 'all', name: '全部', icon: '✨' },
+  { id: 'walk', name: '代遛', icon: '🦮' },
   { id: 'bath', name: '洗澡美容', icon: '🛁' },
   { id: 'feed', name: '上门喂养', icon: '🍖' },
   { id: 'boarding', name: '寄养托管', icon: '🏠' },

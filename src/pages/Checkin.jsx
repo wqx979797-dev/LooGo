@@ -15,6 +15,7 @@ export default function Checkin() {
   const [selectedRoute, setSelectedRoute] = useState(null)
   const [checkinPhoto, setCheckinPhoto] = useState(null)
   const [completedRecording, setCompletedRecording] = useState({ time: 0, distance: 0 })
+  const [locationMessage, setLocationMessage] = useState('尚未开始定位')
 
   const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月']
 
@@ -51,36 +52,65 @@ export default function Checkin() {
   const totalDuration = checkins.reduce((sum, c) => sum + c.duration, 0)
   const currentStreak = 5
 
-  // 模拟位置追踪
+  // 真实定位优先；如果浏览器拒绝或不可用，再回退到演示轨迹。
   useEffect(() => {
     let interval
     if (isRecording) {
       interval = setInterval(() => {
         setRecordingTime(prev => prev + 1)
         setRecordingDistance(prev => prev + 0.01)
-        
-        // 模拟位置变化
-        if (pathCoordinates.length === 0) {
-          // 初始位置
-          setPathCoordinates([[40.0123, 116.4567]])
-        } else {
-          const last = pathCoordinates[pathCoordinates.length - 1]
+        setPathCoordinates(prev => {
+          const basePath = prev.length > 0 ? prev : [[40.0123, 116.4567]]
+          const last = basePath[basePath.length - 1]
           const newLat = last[0] + (Math.random() - 0.5) * 0.001
           const newLng = last[1] + (Math.random() - 0.5) * 0.001
-          setPathCoordinates(prev => [...prev, [newLat, newLng]])
-        }
+          return [...basePath, [newLat, newLng]]
+        })
       }, 1000)
     }
     return () => clearInterval(interval)
-  }, [isRecording, pathCoordinates])
+  }, [isRecording])
 
   const startRecording = () => {
-    setIsRecording(true)
-    setRecordingTime(0)
-    setRecordingDistance(0)
-    setPathCoordinates([])
-    setShowCheckinModal(false)
-    setShowRecordingModal(true)
+    const beginWithCoordinate = (coordinate, message) => {
+      setLocationMessage(message)
+      setIsRecording(true)
+      setRecordingTime(0)
+      setRecordingDistance(0)
+      setPathCoordinates([coordinate])
+      setShowCheckinModal(false)
+      setShowRecordingModal(true)
+    }
+
+    if (!navigator.geolocation) {
+      beginWithCoordinate([40.0123, 116.4567], '当前浏览器不支持定位，已使用演示坐标。')
+      alert('当前浏览器不支持定位，已使用演示坐标继续。')
+      return
+    }
+
+    setLocationMessage('正在申请定位权限...')
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        beginWithCoordinate(
+          [position.coords.latitude, position.coords.longitude],
+          `定位成功：${position.coords.latitude.toFixed(5)}, ${position.coords.longitude.toFixed(5)}`
+        )
+      },
+      (error) => {
+        const reason = error.code === error.PERMISSION_DENIED
+          ? '你拒绝了定位权限'
+          : error.code === error.TIMEOUT
+            ? '定位超时'
+            : '当前位置不可用'
+        beginWithCoordinate([40.0123, 116.4567], `${reason}，已使用演示坐标。`)
+        alert(`${reason}，本次使用演示坐标继续记录。`)
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000
+      }
+    )
   }
 
   const stopRecording = () => {
@@ -277,6 +307,7 @@ export default function Checkin() {
             <div className="bg-gray-100 rounded-2xl p-4 mb-4 text-center">
               <p className="text-4xl font-bold text-primary mb-2">{formatTime(recordingTime)}</p>
               <p className="text-lg text-gray-600">{recordingDistance.toFixed(2)} km</p>
+              <p className="text-xs text-gray-500 mt-2">{locationMessage}</p>
             </div>
           </div>
           <div className="flex-1 p-4">
