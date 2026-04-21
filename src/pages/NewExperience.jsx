@@ -21,29 +21,71 @@ const modeMeta = {
 }
 
 const navItems = [
-  { id: 'shop', label: '商城', icon: '▦' },
-  { id: 'community', label: '社区', icon: '◍' },
-  { id: 'go', label: 'GO', icon: '▶' },
-  { id: 'clinic', label: '就诊', icon: '✚' },
-  { id: 'mine', label: '我的', icon: '♙' }
+  { id: 'shop', label: '商城', icon: 'shop' },
+  { id: 'community', label: '社区', icon: 'people' },
+  { id: 'go', label: 'GO', icon: 'go' },
+  { id: 'message', label: '消息', icon: 'chat' },
+  { id: 'mine', label: '我的', icon: 'dog' }
 ]
 
 const walkers = [
-  { id: 'p1', name: 'Momo', pet: '比熊', avatar: '🐶', position: [40.0129, 116.4575], bubble: '慢走中～' },
-  { id: 'p2', name: 'Seven', pet: '柴犬', avatar: '🦊', position: [40.014, 116.4591], bubble: '求搭子!' },
-  { id: 'p3', name: 'Luna', pet: '边牧', avatar: '🐾', position: [40.0114, 116.4558], bubble: '草坪见' },
-  { id: 'p4', name: '奶盖', pet: '猫猫', avatar: '🐱', position: [40.0134, 116.4547], bubble: '代遛结束' }
+  { id: 'p1', name: 'Momo', pet: '比熊', role: 'girl', dog: 'orange', position: [40.0129, 116.4575], bubble: '慢走中～' },
+  { id: 'p2', name: 'Seven', pet: '柴犬', role: 'boy', dog: 'brown', position: [40.014, 116.4591], bubble: '求搭子!' },
+  { id: 'p3', name: 'Luna', pet: '边牧', role: 'girl green', dog: 'black', position: [40.0114, 116.4558], bubble: '草坪见' },
+  { id: 'p4', name: '奶盖', pet: '柯基', role: 'boy blue', dog: 'orange', position: [40.0134, 116.4547], bubble: '代遛结束' }
 ]
 
-const createPixelIcon = (avatar, name, hidden = false, bubble = '') => L.divIcon({
+const sideActions = [
+  { id: 'sign', label: '签到', icon: 'calendar' },
+  { id: 'route', label: '路线', icon: 'route' },
+  { id: 'task', label: '任务', icon: 'task' },
+  { id: 'water', label: '补水点', icon: 'water' },
+  { id: 'poop', label: '排泄点', icon: 'poop' },
+  { id: 'hospital', label: '医院', icon: 'hospital' },
+  { id: 'toilet', label: '卫生间', icon: 'toilet' }
+]
+
+const panelContent = {
+  shop: {
+    title: '像素商城',
+    rows: ['能量骨头 x3', '夜遛反光绳', '宠物水壶补给包']
+  },
+  community: {
+    title: '附近社区',
+    rows: ['Momo 发布了新路线', 'Seven 正在寻找搭子', 'Luna 分享了补水点']
+  },
+  message: {
+    title: '消息',
+    rows: ['Momo：今晚慢走吗？', '系统：你有 2 个搭子邀请', 'Luna：草坪集合～']
+  },
+  mine: {
+    title: '我的档案',
+    rows: ['遛遛达人 Lv.12', '今日体力 30/30', '已公开位置：开启']
+  }
+}
+
+const pixelIcon = (type) => `<span class="game-icon ${type}"><i></i></span>`
+
+const pixelAvatar = (role = 'boy', dog = 'orange') => `
+  <span class="pixel-party">
+    <span class="pixel-human ${role}">
+      <i class="head"></i><i class="body"></i><i class="leg l"></i><i class="leg r"></i>
+    </span>
+    <span class="pixel-dog ${dog}">
+      <i class="ear"></i><i class="body"></i><i class="tail"></i><i class="leg a"></i><i class="leg b"></i>
+    </span>
+  </span>
+`
+
+const createPixelIcon = (walker, hidden = false, bubble = '') => L.divIcon({
   className: `new-pixel-marker ${hidden ? 'is-hidden' : 'is-visible'}`,
   html: `
     <span class="new-pixel-bubble ${bubble ? 'show' : ''}">${bubble}</span>
-    <span class="new-pixel-pet">${avatar}</span>
-    <span class="new-pixel-name">${name}</span>
+    ${pixelAvatar(walker.role, walker.dog)}
+    <span class="new-pixel-name">${walker.name}</span>
   `,
-  iconSize: [74, 76],
-  iconAnchor: [37, 54],
+  iconSize: [100, 92],
+  iconAnchor: [50, 64],
   popupAnchor: [0, -54]
 })
 
@@ -51,11 +93,11 @@ const createSelfIcon = (bubble = '') => L.divIcon({
   className: 'new-pixel-marker self',
   html: `
     <span class="new-pixel-bubble ${bubble ? 'show' : ''}">${bubble}</span>
-    <span class="new-pixel-pet self-pet">🐕</span>
+    ${pixelAvatar('boy blue self', 'orange self')}
     <span class="new-pixel-name">我</span>
   `,
-  iconSize: [78, 78],
-  iconAnchor: [39, 56],
+  iconSize: [108, 94],
+  iconAnchor: [54, 66],
   popupAnchor: [0, -56]
 })
 
@@ -69,10 +111,12 @@ export default function NewExperience({ onBack }) {
   const [message, setMessage] = useState('')
   const [selfBubble, setSelfBubble] = useState('')
   const [walkerBubbles, setWalkerBubbles] = useState(() => Object.fromEntries(walkers.map(w => [w.id, w.bubble])))
+  const [sideNotice, setSideNotice] = useState('')
   const dragStartX = useRef(null)
 
   const visibleWalkerIds = modeMeta[mode].visible
   const currentCenter = path[path.length - 1]
+  const activePage = navItems[activeNav].id
 
   useEffect(() => {
     if (!isWalking) return
@@ -123,6 +167,11 @@ export default function NewExperience({ onBack }) {
     }
   }
 
+  const handleSideAction = (action) => {
+    setSideNotice(`${action.label} 已打开`)
+    window.setTimeout(() => setSideNotice(''), 2200)
+  }
+
   const sendMessage = () => {
     const text = message.trim()
     if (!text) return
@@ -163,7 +212,7 @@ export default function NewExperience({ onBack }) {
             <Marker
               key={`${walker.id}-${mode}-${visible}`}
               position={walker.position}
-              icon={createPixelIcon(walker.avatar, walker.name, !visible, visible ? walkerBubbles[walker.id] : '')}
+              icon={createPixelIcon(walker, !visible, visible ? walkerBubbles[walker.id] : '')}
             >
               <Popup>{walker.name} · {walker.pet}</Popup>
             </Marker>
@@ -175,6 +224,16 @@ export default function NewExperience({ onBack }) {
 
       <header className="new-top-panel">
         <button className="new-back-button" onClick={onBack}>旧版</button>
+        <section className="player-card">
+          <div className="player-avatar">
+            <span className="pixel-dog-face"><i></i></span>
+          </div>
+          <div className="player-info">
+            <strong>遛遛达人</strong>
+            <div className="level-line"><span>☆</span><b>LV.12</b></div>
+            <div className="energy-bar"><i style={{ width: '100%' }}></i><em>30/30</em></div>
+          </div>
+        </section>
         <div className="new-mode-switch">
           {Object.entries(modeMeta).map(([key, item]) => (
             <button
@@ -189,19 +248,32 @@ export default function NewExperience({ onBack }) {
         <p>{modeMeta[mode].hint}</p>
       </header>
 
+      <aside className="new-side-actions">
+        {sideActions.map((action) => (
+          <button key={action.id} onClick={() => handleSideAction(action)}>
+            <span dangerouslySetInnerHTML={{ __html: pixelIcon(action.icon) }} />
+            <b>{action.label}</b>
+          </button>
+        ))}
+      </aside>
+
+      {sideNotice && <div className="side-notice">{sideNotice}</div>}
+
       <div className={`new-portal-fx ${modeFx}`} />
 
-      <section className="new-message-panel">
-        <input
-          value={message}
-          onChange={(event) => setMessage(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') sendMessage()
-          }}
-          placeholder="对附近宠友说点什么..."
-        />
-        <button onClick={sendMessage}>发送</button>
-      </section>
+      {activePage === 'go' && (
+        <section className="new-message-panel">
+          <input
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') sendMessage()
+            }}
+            placeholder="对附近宠友说点什么..."
+          />
+          <button onClick={sendMessage}>发送</button>
+        </section>
+      )}
 
       <section
         className="new-loop-nav"
@@ -223,13 +295,25 @@ export default function NewExperience({ onBack }) {
                   '--alpha': 1 - Math.abs(offset) * 0.16
                 }}
               >
-                <span>{item.icon}</span>
+                <span dangerouslySetInnerHTML={{ __html: pixelIcon(item.icon) }} />
                 <b>{item.id === 'go' && isWalking ? displayTime : item.label}</b>
               </button>
             )
           })}
         </div>
       </section>
+
+      {activePage !== 'go' && (
+        <section className="new-page-panel">
+          <div className="panel-handle" />
+          <h2>{panelContent[activePage]?.title}</h2>
+          <div className="panel-list">
+            {panelContent[activePage]?.rows.map((row) => (
+              <button key={row}>{row}</button>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   )
 }
