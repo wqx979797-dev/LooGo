@@ -1,7 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Calendar, MapPin, Clock, Flame, Trophy, ChevronLeft, ChevronRight, Plus, Target, Play, Pause, X, Camera, Share2, Map } from 'lucide-react'
 import { checkins, currentUser, routes } from '../data/mockData'
 import { MapContainer, TileLayer, Polyline, Marker, Popup } from 'react-leaflet'
+import L from 'leaflet'
+
+const pixelPetIcon = L.divIcon({
+  className: 'pixel-map-marker',
+  html: '<span class="pixel-map-marker-core">🐾</span>',
+  iconSize: [34, 34],
+  iconAnchor: [17, 17],
+  popupAnchor: [0, -18]
+})
 
 export default function Checkin() {
   const [currentMonth, setCurrentMonth] = useState(new Date(2024, 0))
@@ -16,6 +25,10 @@ export default function Checkin() {
   const [checkinPhoto, setCheckinPhoto] = useState(null)
   const [completedRecording, setCompletedRecording] = useState({ time: 0, distance: 0 })
   const [locationMessage, setLocationMessage] = useState('尚未开始定位')
+  const [shareText, setShareText] = useState('')
+  const [publishAsRoute, setPublishAsRoute] = useState(true)
+  const watchIdRef = useRef(null)
+  const lastKnownCoordinateRef = useRef(null)
 
   const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月']
 
@@ -52,24 +65,68 @@ export default function Checkin() {
   const totalDuration = checkins.reduce((sum, c) => sum + c.duration, 0)
   const currentStreak = 5
 
-  // 真实定位优先；如果浏览器拒绝或不可用，再回退到演示轨迹。
+  const haversineKm = (from, to) => {
+    const toRad = (value) => value * Math.PI / 180
+    const radius = 6371
+    const dLat = toRad(to[0] - from[0])
+    const dLng = toRad(to[1] - from[1])
+    const a = Math.sin(dLat / 2) ** 2
+      + Math.cos(toRad(from[0])) * Math.cos(toRad(to[0])) * Math.sin(dLng / 2) ** 2
+    return 2 * radius * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  }
+
+  const appendCoordinate = (coordinate) => {
+    setPathCoordinates(prev => {
+      if (prev.length === 0) return [coordinate]
+      const last = prev[prev.length - 1]
+      const steps = 6
+      const interpolated = Array.from({ length: steps }, (_, index) => {
+        const ratio = (index + 1) / steps
+        return [
+          last[0] + (coordinate[0] - last[0]) * ratio,
+          last[1] + (coordinate[1] - last[1]) * ratio
+        ]
+      })
+      const distance = haversineKm(last, coordinate)
+      setRecordingDistance(prevDistance => prevDistance + distance)
+      interpolated.forEach((point, index) => {
+        window.setTimeout(() => {
+          setPathCoordinates(current => [...current, point])
+        }, (index + 1) * 120)
+      })
+      return prev
+    })
+  }
+
+  // 真实定位优先；定位更新较慢时用插值补点，让轨迹视觉更顺滑。
   useEffect(() => {
     let interval
     if (isRecording) {
       interval = setInterval(() => {
         setRecordingTime(prev => prev + 1)
-        setRecordingDistance(prev => prev + 0.01)
-        setPathCoordinates(prev => {
-          const basePath = prev.length > 0 ? prev : [[40.0123, 116.4567]]
-          const last = basePath[basePath.length - 1]
-          const newLat = last[0] + (Math.random() - 0.5) * 0.001
-          const newLng = last[1] + (Math.random() - 0.5) * 0.001
-          return [...basePath, [newLat, newLng]]
-        })
+        if (!watchIdRef.current && lastKnownCoordinateRef.current) {
+          const last = lastKnownCoordinateRef.current
+          const next = [
+            last[0] + (Math.random() - 0.48) * 0.00022,
+            last[1] + (Math.random() - 0.48) * 0.00022
+          ]
+          lastKnownCoordinateRef.current = next
+          appendCoordinate(next)
+        }
       }, 1000)
     }
-    return () => clearInterval(interval)
+    return () => {
+      clearInterval(interval)
+    }
   }, [isRecording])
+
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current) {
+        navigator.geolocation.clearWatch(watchIdRef.current)
+      }
+    }
+  }, [])
 
   const startRecording = () => {
     const beginWithCoordinate = (coordinate, message) => {
@@ -78,6 +135,7 @@ export default function Checkin() {
       setRecordingTime(0)
       setRecordingDistance(0)
       setPathCoordinates([coordinate])
+      lastKnownCoordinateRef.current = coordinate
       setShowCheckinModal(false)
       setShowRecordingModal(true)
     }
@@ -91,9 +149,26 @@ export default function Checkin() {
     setLocationMessage('正在申请定位权限...')
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        const firstCoordinate = [position.coords.latitude, position.coords.longitude]
         beginWithCoordinate(
-          [position.coords.latitude, position.coords.longitude],
+          firstCoordinate,
           `定位成功：${position.coords.latitude.toFixed(5)}, ${position.coords.longitude.toFixed(5)}`
+        )
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          (nextPosition) => {
+            const nextCoordinate = [nextPosition.coords.latitude, nextPosition.coords.longitude]
+            lastKnownCoordinateRef.current = nextCoordinate
+            setLocationMessage(`实时定位中：${nextCoordinate[0].toFixed(5)}, ${nextCoordinate[1].toFixed(5)}`)
+            appendCoordinate(nextCoordinate)
+          },
+          () => {
+            setLocationMessage('实时定位暂不可用，正在用平滑演示轨迹继续。')
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 3000
+          }
         )
       },
       (error) => {
@@ -102,7 +177,7 @@ export default function Checkin() {
           : error.code === error.TIMEOUT
             ? '定位超时'
             : '当前位置不可用'
-        beginWithCoordinate([40.0123, 116.4567], `${reason}，已使用演示坐标。`)
+        beginWithCoordinate([40.0123, 116.4567], `${reason}，已使用平滑演示坐标。`)
         alert(`${reason}，本次使用演示坐标继续记录。`)
       },
       {
@@ -115,9 +190,32 @@ export default function Checkin() {
 
   const stopRecording = () => {
     setIsRecording(false)
+    if (watchIdRef.current) {
+      navigator.geolocation.clearWatch(watchIdRef.current)
+      watchIdRef.current = null
+    }
     setShowRecordingModal(false)
     setCompletedRecording({ time: recordingTime, distance: recordingDistance })
+    setShareText(`今天带豆豆出来遛弯，走了${recordingDistance.toFixed(2)}公里！🐕`)
     setShowShareModal(true)
+  }
+
+  const resetRecording = () => {
+    setShowShareModal(false)
+    setCheckinPhoto(null)
+    setRecordingTime(0)
+    setRecordingDistance(0)
+    setPathCoordinates([])
+    setPublishAsRoute(true)
+    setShareText('')
+  }
+
+  const confirmCheckin = (publish = false) => {
+    alert(publish
+      ? '发布成功！本次轨迹已保存为路线分享，其他宠主可以看到并加入啦。'
+      : '保存成功！本次遛宠记录已保存到你的打卡记录。'
+    )
+    resetRecording()
   }
 
   const formatTime = (seconds) => {
@@ -295,23 +393,23 @@ export default function Checkin() {
       )}
 
       {showRecordingModal && (
-        <div className="fixed inset-0 bg-white z-50 flex flex-col">
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div className="fixed inset-0 bg-cream z-50 flex flex-col">
+          <div className="h-14 flex items-center justify-between px-4 border-b border-orange-100 bg-white/90 backdrop-blur-xl z-[1001]">
             <button onClick={stopRecording} className="text-gray-500">
               <ChevronLeft size={24} />
             </button>
             <h3 className="font-semibold">正在记录路线</h3>
             <button onClick={stopRecording} className="text-primary">结束</button>
           </div>
-          <div className="p-4">
-            <div className="bg-gray-100 rounded-2xl p-4 mb-4 text-center">
-              <p className="text-4xl font-bold text-primary mb-2">{formatTime(recordingTime)}</p>
-              <p className="text-lg text-gray-600">{recordingDistance.toFixed(2)} km</p>
-              <p className="text-xs text-gray-500 mt-2">{locationMessage}</p>
+
+          <div className="relative flex-1 min-h-0">
+            <div className="absolute top-4 left-4 right-4 z-[1000] bg-white/90 backdrop-blur-xl rounded-[24px] p-4 text-center shadow-sm border border-orange-100">
+              <p className="text-4xl font-black text-primary tracking-[0.12em]">{formatTime(recordingTime)}</p>
+              <p className="text-lg text-cocoa mt-1">{recordingDistance.toFixed(2)} km</p>
+              <p className="text-xs text-gray-500 mt-2 line-clamp-2">{locationMessage}</p>
             </div>
-          </div>
-          <div className="flex-1 p-4">
-            <div className="h-64 bg-gray-100 rounded-2xl overflow-hidden">
+
+            <div className="absolute inset-0">
               <MapContainer
                 center={center}
                 zoom={15}
@@ -337,31 +435,32 @@ export default function Checkin() {
                   <>
                     <Polyline
                       positions={pathCoordinates}
-                      color="#FF6B35"
-                      weight={4}
-                      opacity={0.8}
+                      color="#F59F85"
+                      weight={5}
+                      opacity={0.9}
                     />
-                    <Marker position={pathCoordinates[pathCoordinates.length - 1]}>
+                    <Marker position={pathCoordinates[pathCoordinates.length - 1]} icon={pixelPetIcon}>
                       <Popup>当前位置</Popup>
                     </Marker>
                   </>
                 )}
               </MapContainer>
             </div>
-          </div>
-          <div className="p-6 pb-12 border-t border-gray-200 flex items-center justify-center gap-8">
-            <button
-              onClick={() => setIsRecording(!isRecording)}
-              className="w-20 h-20 rounded-full bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/30"
-            >
-              {isRecording ? <Pause size={28} /> : <Play size={28} />}
-            </button>
-            <button
-              onClick={stopRecording}
-              className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center text-white shadow-lg"
-            >
-              <X size={24} />
-            </button>
+
+            <div className="absolute left-0 right-0 bottom-0 z-[1000] bg-white/90 backdrop-blur-xl border-t border-orange-100 px-6 pt-5 pb-[calc(24px+env(safe-area-inset-bottom))] flex items-center justify-center gap-8">
+              <button
+                onClick={() => setIsRecording(!isRecording)}
+                className="w-20 h-20 rounded-[28px] pixel-button bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/30"
+              >
+                {isRecording ? <Pause size={28} /> : <Play size={28} />}
+              </button>
+              <button
+                onClick={stopRecording}
+                className="w-16 h-16 rounded-[24px] pixel-button bg-red-400 flex items-center justify-center text-white shadow-lg"
+              >
+                <X size={24} />
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -372,71 +471,82 @@ export default function Checkin() {
           onClick={() => setShowShareModal(false)}
         >
           <div
-            className="bg-white w-full rounded-t-3xl p-6 animate-slide-up"
+            className="bg-white w-full max-h-[88vh] rounded-t-3xl animate-slide-up flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
-            <h3 className="text-lg font-bold mb-2">遛宠完成！</h3>
-            <p className="text-sm text-gray-500 mb-4">
-              本次遛宠 {completedRecording.distance.toFixed(2)}km，耗时 {Math.floor(completedRecording.time / 60)}分{completedRecording.time % 60}秒
-            </p>
+            <div className="px-6 pt-5 pb-3 border-b border-orange-100">
+              <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
+              <h3 className="text-lg font-bold mb-2">遛宠完成！</h3>
+              <p className="text-sm text-gray-500">
+                本次遛宠 {completedRecording.distance.toFixed(2)}km，耗时 {Math.floor(completedRecording.time / 60)}分{completedRecording.time % 60}秒
+              </p>
+            </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">添加照片</label>
-              <div className="flex gap-2">
-                {checkinPhoto ? (
-                  <div className="relative w-24 h-24 rounded-xl overflow-hidden">
-                    <img src={checkinPhoto} alt="打卡照片" className="w-full h-full object-cover" />
+            <div className="flex-1 overflow-y-auto px-6 py-4">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">添加照片</label>
+                <div className="flex gap-2">
+                  {checkinPhoto ? (
+                    <div className="relative w-24 h-24 rounded-xl overflow-hidden">
+                      <img src={checkinPhoto} alt="打卡照片" className="w-full h-full object-cover" />
+                      <button
+                        onClick={() => setCheckinPhoto(null)}
+                        className="absolute top-1 right-1 w-6 h-6 bg-black/50 rounded-full flex items-center justify-center text-white"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
                     <button
-                      onClick={() => setCheckinPhoto(null)}
-                      className="absolute top-1 right-1 w-6 h-6 bg-black/50 rounded-full flex items-center justify-center text-white"
+                      onClick={() => setCheckinPhoto('https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&q=80')}
+                      className="w-24 h-24 bg-gray-100 rounded-xl flex flex-col items-center justify-center border-2 border-dashed border-gray-300"
                     >
-                      <X size={14} />
+                      <Camera size={24} className="text-gray-400 mb-1" />
+                      <span className="text-xs text-gray-400">上传照片</span>
                     </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setCheckinPhoto('https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&q=80')}
-                    className="w-24 h-24 bg-gray-100 rounded-xl flex flex-col items-center justify-center border-2 border-dashed border-gray-300"
-                  >
-                    <Camera size={24} className="text-gray-400 mb-1" />
-                    <span className="text-xs text-gray-400">拍摄照片</span>
-                  </button>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">分享文字</label>
-              <textarea
-                defaultValue={`今天带豆豆出来遛弯，走了${completedRecording.distance.toFixed(2)}公里！🐕`}
-                rows={2}
-                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">分享文字</label>
+                <textarea
+                  value={shareText}
+                  onChange={(event) => setShareText(event.target.value)}
+                  rows={3}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
 
-            <div className="flex gap-3">
               <button
-                onClick={() => {
-                  setShowShareModal(false)
-                  setCheckinPhoto(null)
-                }}
-                className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-medium"
+                onClick={() => setPublishAsRoute(!publishAsRoute)}
+                className={`w-full flex items-center justify-between rounded-2xl p-4 border ${
+                  publishAsRoute ? 'bg-blush border-primary/30 text-cocoa' : 'bg-gray-50 border-gray-200 text-gray-500'
+                }`}
               >
-                稍后再说
+                <span className="font-medium">同时上传为路线分享</span>
+                <span>{publishAsRoute ? '已开启' : '未开启'}</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 p-4 pb-[calc(16px+env(safe-area-inset-bottom))] border-t border-orange-100 bg-white">
+              <button
+                onClick={resetRecording}
+                className="py-3 bg-gray-100 text-gray-600 rounded-xl font-medium"
+              >
+                取消
               </button>
               <button
-                onClick={() => {
-                  alert('打卡成功！\n您的遛宠记录已保存，精彩瞬间已分享给好友！')
-                  setShowShareModal(false)
-                  setCheckinPhoto(null)
-                  setRecordingTime(0)
-                  setRecordingDistance(0)
-                  setPathCoordinates([])
-                }}
-                className="flex-1 py-3 bg-primary text-white rounded-xl font-medium"
+                onClick={() => confirmCheckin(false)}
+                className="py-3 bg-mint text-secondary rounded-xl font-medium"
               >
-                立即打卡
+                保存记录
+              </button>
+              <button
+                onClick={() => confirmCheckin(true)}
+                className="py-3 bg-primary text-white rounded-xl font-medium"
+              >
+                确认发布
               </button>
             </div>
           </div>

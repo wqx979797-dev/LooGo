@@ -66,3 +66,52 @@ body {
 .floaty {
   animation: softFloat 4.5s ease-in-out infinite;
 }
+
+.pixel-button {
+  image-rendering: pixelated;
+  box-shadow:
+    0 8px 0 rgba(91, 70, 54, 0.14),
+    inset 0 -4px 0 rgba(91, 70, 54, 0.16);
+}
+
+.pixel-map-marker {
+  image-rendering: pixelated;
+}
+
+.pixel-map-marker-core {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  background: #FFE8DF;
+  border: 3px solid #5B4636;
+  box-shadow:
+    4px 0 0 #5B4636,
+    0 4px 0 #5B4636,
+    4px 4px 0 rgba(91, 70, 54, 0.16);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.pixel-walker-marker {
+  image-rendering: pixelated;
+}
+
+.pixel-walker-core {
+  min-width: 42px;
+  height: 34px;
+  padding: 0 8px;
+  display: grid;
+  grid-template-columns: auto auto;
+  place-items: center;
+  gap: 4px;
+  background: #E8F6F0;
+  border: 3px solid #5B4636;
+  box-shadow:
+    4px 0 0 #5B4636,
+    0 4px 0 #5B4636,
+    4px 4px 0 rgba(91, 70, 54, 0.14);
+  color: #5B4636;
+  font-size: 13px;
+  font-weight: 800;
+}
