@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { MapContainer, Marker, Polyline, Popup, TileLayer } from 'react-leaflet'
+import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet'
 import L from 'leaflet'
 
 const modeMeta = {
@@ -62,6 +62,39 @@ const panelContent = {
     title: '我的档案',
     rows: ['遛遛达人 Lv.12', '今日体力 30/30', '已公开位置：开启']
   }
+}
+
+const mapLabels = [
+  { text: '朝阳千渠', type: 'river', x: 18, y: 36 },
+  { text: '幽静湖', type: 'lake', x: 20, y: 22 },
+  { text: '五里桥郊野公园', type: 'park', x: 76, y: 42 },
+  { text: '高尔夫花园', type: 'home', x: 10, y: 58 },
+  { text: '保利·嘉园', type: 'home', x: 38, y: 66 },
+  { text: '首都医科大学附属北京朝阳医院', type: 'hospital', x: 20, y: 82 }
+]
+
+const treeDots = [
+  [8, 18], [13, 21], [18, 16], [27, 12], [34, 20], [61, 12], [80, 10],
+  [9, 43], [17, 47], [29, 45], [67, 48], [74, 50], [88, 44],
+  [7, 74], [15, 70], [56, 77], [68, 73], [88, 78]
+]
+
+function MapResizer() {
+  const map = useMap()
+
+  useEffect(() => {
+    const refresh = () => map.invalidateSize()
+    const timers = [0, 240, 700].map((delay) => window.setTimeout(refresh, delay))
+    window.addEventListener('resize', refresh)
+    window.addEventListener('orientationchange', refresh)
+    return () => {
+      timers.forEach(window.clearTimeout)
+      window.removeEventListener('resize', refresh)
+      window.removeEventListener('orientationchange', refresh)
+    }
+  }, [map])
+
+  return null
 }
 
 const pixelIcon = (type) => `<span class="game-icon ${type}"><i></i></span>`
@@ -193,10 +226,11 @@ export default function NewExperience({ onBack }) {
       <MapContainer
         center={currentCenter}
         zoom={15}
-        style={{ height: '100%', width: '100%' }}
+        style={{ height: '100dvh', minHeight: '100vh', width: '100%' }}
         zoomControl={false}
         attributionControl={false}
       >
+        <MapResizer />
         <TileLayer
           attribution='&copy; OpenStreetMap'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -219,6 +253,20 @@ export default function NewExperience({ onBack }) {
           )
         })}
       </MapContainer>
+
+      <div className="game-map-skin">
+        <div className="pixel-lake" />
+        <div className="pixel-river river-a" />
+        <div className="pixel-river river-b" />
+        {treeDots.map(([x, y], index) => (
+          <span key={`${x}-${y}-${index}`} className="pixel-tree" style={{ left: `${x}%`, top: `${y}%` }} />
+        ))}
+        {mapLabels.map((label) => (
+          <span key={label.text} className={`game-map-label ${label.type}`} style={{ left: `${label.x}%`, top: `${label.y}%` }}>
+            {label.text}
+          </span>
+        ))}
+      </div>
 
       <div className="new-map-overlay" />
 
