@@ -48,6 +48,7 @@ export default function Home() {
   const [savedRoutes, setSavedRoutes] = useState({})
   const [joinedWalkerId, setJoinedWalkerId] = useState(null)
   const [homeLocationMessage, setHomeLocationMessage] = useState('打开位置后，可加入附近正在遛宠的人。')
+  const [newVersionReady, setNewVersionReady] = useState(false)
   const navigate = useNavigate()
 
   const toggleLike = (routeId) => {
@@ -109,6 +110,19 @@ export default function Home() {
           <p className="text-sm text-gray-500">宠物友好的遛宠路线社区</p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              setNewVersionReady(true)
+              window.dispatchEvent(new Event('loogo:enable-new'))
+            }}
+            className={`px-3 py-2 rounded-2xl text-xs font-bold border transition-all ${
+              newVersionReady
+                ? 'bg-mint text-secondary border-secondary/30'
+                : 'bg-white/80 text-primary border-orange-100 shadow-sm active:scale-95'
+            }`}
+          >
+            {newVersionReady ? '新版已开启' : '切换新版'}
+          </button>
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blush to-mint p-0.5 shadow-sm">
             <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full rounded-full bg-white" />
           </div>
