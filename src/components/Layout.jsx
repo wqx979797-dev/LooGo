@@ -3,7 +3,7 @@ import TabBar from './TabBar'
 
 export default function Layout() {
   return (
-    <div className="min-h-screen bg-light pb-16">
+    <div className="min-h-screen bg-light pb-20 text-dark">
       <main className="max-w-lg mx-auto">
         <Outlet />
       </main>

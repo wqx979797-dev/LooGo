@@ -10,8 +10,11 @@
 
 body {
   font-family: 'Inter', system-ui, sans-serif;
-  background-color: #F8F9FA;
-  color: #2D3436;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255, 232, 223, 0.95), transparent 28%),
+    radial-gradient(circle at 88% 12%, rgba(232, 246, 240, 0.95), transparent 24%),
+    linear-gradient(180deg, #FFF9F1 0%, #FFF3E6 100%);
+  color: #3D322A;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -26,7 +29,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #FF6B35;
+  background: #F59F85;
   border-radius: 3px;
 }
 
@@ -34,4 +37,32 @@ body {
   height: 100%;
   width: 100%;
   border-radius: 12px;
+}
+
+@keyframes softFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes gentlePop {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.soft-card {
+  animation: gentlePop 420ms ease both;
+}
+
+.floaty {
+  animation: softFloat 4.5s ease-in-out infinite;
 }

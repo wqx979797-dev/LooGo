@@ -11,15 +11,15 @@ const tabs = [
 
 export default function TabBar() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
-      <div className="max-w-lg mx-auto flex justify-around items-center h-16">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-orange-100 z-50">
+      <div className="max-w-lg mx-auto flex justify-around items-center h-18 px-2 py-2">
         {tabs.map(({ path, icon: Icon, label }) => (
           <NavLink
             key={path}
             to={path}
             className={({ isActive }) =>
-              `flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
-                isActive ? 'text-primary' : 'text-gray-400'
+              `flex flex-col items-center gap-1 px-3 py-2 rounded-2xl transition-all ${
+                isActive ? 'text-primary bg-blush shadow-sm scale-105' : 'text-gray-400'
               }`
             }
           >

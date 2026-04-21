@@ -20,9 +20,9 @@ export default function Services() {
 
   return (
     <div className="min-h-screen">
-      <header className="bg-gradient-to-r from-secondary to-teal-400 px-4 py-6 text-white">
+      <header className="bg-gradient-to-br from-mint via-white to-blush px-4 py-6 text-cocoa border-b border-orange-100">
         <h1 className="text-xl font-bold mb-1">宠物服务</h1>
-        <p className="text-sm opacity-90">专业服务，放心托付</p>
+        <p className="text-sm text-gray-500">专业服务，放心托付</p>
       </header>
 
       <div className="p-4 space-y-4">
@@ -33,7 +33,7 @@ export default function Services() {
               onClick={() => setActiveType(type.id)}
               className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                 activeType === type.id
-                  ? 'bg-secondary text-white'
+                  ? 'bg-secondary text-white shadow-sm'
                   : 'bg-white text-gray-600 shadow-sm'
               }`}
             >
@@ -43,7 +43,7 @@ export default function Services() {
           ))}
         </div>
 
-        <div className="bg-gradient-to-r from-teal-50 to-emerald-50 rounded-2xl p-4 flex items-center gap-4">
+        <div className="bg-gradient-to-r from-mint to-white rounded-2xl p-4 flex items-center gap-4 border border-white shadow-sm">
           <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm">
             <Shield size={24} className="text-secondary" />
           </div>
@@ -55,7 +55,7 @@ export default function Services() {
 
         <div className="space-y-4">
           {filteredServices.map((service) => (
-            <Link to={`/service/${service.id}`} key={service.id} className="block bg-white rounded-2xl shadow-sm overflow-hidden">
+            <Link to={`/service/${service.id}`} key={service.id} className="block bg-white/90 rounded-[26px] shadow-sm overflow-hidden border border-orange-100 soft-card">
               <div className="relative h-36">
                 <img src={service.image} alt={service.title} className="w-full h-full object-cover" />
                 <div className="absolute top-2 right-2 px-2 py-1 bg-white/90 rounded-full text-xs font-medium flex items-center gap-1">
