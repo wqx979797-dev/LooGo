@@ -111,10 +111,10 @@ body {
 .recording-arc-dock {
   position: absolute;
   left: 50%;
-  bottom: calc(16px + env(safe-area-inset-bottom));
+  bottom: calc(48px + env(safe-area-inset-bottom));
   z-index: 1000;
   width: min(86vw, 360px);
-  height: 122px;
+  height: 132px;
   transform: translateX(-50%);
   display: flex;
   align-items: flex-end;
@@ -128,7 +128,7 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: -48px;
+  bottom: -58px;
   height: 134px;
   border-radius: 999px 999px 0 0;
   background: rgba(255, 249, 241, 0.74);

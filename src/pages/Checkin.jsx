@@ -393,7 +393,7 @@ export default function Checkin() {
       )}
 
       {showRecordingModal && (
-        <div className="fixed inset-0 bg-cream z-50 flex flex-col">
+        <div className="fixed inset-0 bg-cream z-[9999] flex flex-col">
           <div className="h-14 flex items-center justify-between px-4 border-b border-orange-100 bg-white/90 backdrop-blur-xl z-[1001]">
             <button onClick={stopRecording} className="pixel-mini-icon text-cocoa">
               ‹
