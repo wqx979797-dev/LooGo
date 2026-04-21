@@ -3,11 +3,11 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  base: '/LooGo/',
   server: {
     port: 5173,
     host: true
   },
-  base: './',
   build: {
     outDir: 'docs',
     minify: true,

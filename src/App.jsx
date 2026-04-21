@@ -9,8 +9,10 @@ import RouteDetail from './pages/RouteDetail'
 import ServiceDetail from './pages/ServiceDetail'
 
 function App() {
+  const basename = import.meta.env.PROD ? '/LooGo' : '/'
+
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
