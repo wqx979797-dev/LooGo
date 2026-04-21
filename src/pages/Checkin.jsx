@@ -447,18 +447,17 @@ export default function Checkin() {
               </MapContainer>
             </div>
 
-            <div className="recording-arc-dock">
-              <div className="recording-arc-surface" />
+            <div className="recording-control-dock">
               <button
                 onClick={() => setIsRecording(!isRecording)}
-                className="recording-arc-button primary"
+                className="recording-control-button primary"
                 aria-label={isRecording ? '暂停记录' : '继续记录'}
               >
                 <span className="pixel-action-icon">{isRecording ? 'Ⅱ' : '▶'}</span>
               </button>
               <button
                 onClick={stopRecording}
-                className="recording-arc-button danger"
+                className="recording-control-button danger"
                 aria-label="结束记录"
               >
                 <span className="pixel-action-icon">×</span>
@@ -470,8 +469,7 @@ export default function Checkin() {
 
       {showShareModal && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-end z-50"
-          onClick={() => setShowShareModal(false)}
+          className="fixed inset-0 bg-black/50 flex items-end z-[9999]"
         >
           <div
             className="bg-white w-full max-h-[88vh] rounded-t-3xl animate-slide-up flex flex-col"
@@ -537,7 +535,7 @@ export default function Checkin() {
                 onClick={resetRecording}
                 className="py-3 bg-gray-100 text-gray-600 rounded-xl font-medium"
               >
-                取消
+                取消发布
               </button>
               <button
                 onClick={() => confirmCheckin(false)}
@@ -549,7 +547,7 @@ export default function Checkin() {
                 onClick={() => confirmCheckin(true)}
                 className="py-3 bg-primary text-white rounded-xl font-medium"
               >
-                确认发布
+                发布路线
               </button>
             </div>
           </div>

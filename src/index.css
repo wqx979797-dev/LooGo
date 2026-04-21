@@ -108,63 +108,60 @@ body {
   image-rendering: pixelated;
 }
 
-.recording-arc-dock {
+.recording-control-dock {
   position: absolute;
   left: 50%;
-  bottom: calc(48px + env(safe-area-inset-bottom));
+  bottom: calc(34px + env(safe-area-inset-bottom));
   z-index: 1000;
-  width: min(86vw, 360px);
-  height: 132px;
   transform: translateX(-50%);
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  gap: 30px;
-  padding-bottom: 24px;
-  pointer-events: none;
+  gap: 18px;
+  padding: 14px 18px;
+  border-radius: 34px;
+  background: rgba(255, 249, 241, 0.78);
+  border: 1px solid rgba(255, 232, 223, 0.95);
+  backdrop-filter: blur(20px);
+  box-shadow:
+    0 18px 44px rgba(91, 70, 54, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
-.recording-arc-surface {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -58px;
-  height: 134px;
-  border-radius: 999px 999px 0 0;
-  background: rgba(255, 249, 241, 0.74);
-  border: 2px solid rgba(255, 232, 223, 0.9);
-  border-bottom: 0;
-  backdrop-filter: blur(18px);
-  box-shadow: 0 -12px 36px rgba(91, 70, 54, 0.14);
-}
-
-.recording-arc-button {
+.recording-control-button {
   position: relative;
   z-index: 1;
   pointer-events: auto;
   display: grid;
   place-items: center;
   color: white;
-  border: 3px solid rgba(255, 255, 255, 0.65);
+  border: 2px solid rgba(255, 255, 255, 0.78);
   box-shadow:
-    0 10px 0 rgba(91, 70, 54, 0.14),
-    inset 0 -6px 0 rgba(91, 70, 54, 0.12);
+    0 10px 24px rgba(91, 70, 54, 0.16),
+    inset 0 -4px 0 rgba(91, 70, 54, 0.1);
   image-rendering: pixelated;
+  transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
-.recording-arc-button.primary {
-  width: 78px;
-  height: 78px;
-  border-radius: 28px;
+.recording-control-button:active {
+  transform: translateY(2px) scale(0.98);
+  box-shadow:
+    0 6px 16px rgba(91, 70, 54, 0.16),
+    inset 0 -2px 0 rgba(91, 70, 54, 0.1);
+}
+
+.recording-control-button.primary {
+  width: 64px;
+  height: 64px;
+  border-radius: 24px;
   background: #F59F85;
 }
 
-.recording-arc-button.danger {
-  width: 62px;
-  height: 62px;
-  border-radius: 24px;
+.recording-control-button.danger {
+  width: 56px;
+  height: 56px;
+  border-radius: 22px;
   background: #F45F67;
-  margin-bottom: 4px;
 }
 
 .pixel-map-marker {
