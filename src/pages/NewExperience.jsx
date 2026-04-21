@@ -24,7 +24,7 @@ const navItems = [
   { id: 'shop', label: '商城', icon: 'shop' },
   { id: 'community', label: '社区', icon: 'people' },
   { id: 'go', label: 'GO', icon: 'go' },
-  { id: 'message', label: '消息', icon: 'chat' },
+  { id: 'clinic', label: '就诊', icon: 'hospital' },
   { id: 'mine', label: '我的', icon: 'dog' }
 ]
 
@@ -47,37 +47,32 @@ const sideActions = [
 
 const panelContent = {
   shop: {
-    title: '像素商城',
-    rows: ['能量骨头 x3', '夜遛反光绳', '宠物水壶补给包']
+    title: '宠物商城',
+    rows: ['补水随行杯 · 今日推荐', '夜遛反光牵引绳 · 附近有货', '能量零食包 · 可用 120 骨头币抵扣']
   },
   community: {
-    title: '附近社区',
-    rows: ['Momo 发布了新路线', 'Seven 正在寻找搭子', 'Luna 分享了补水点']
+    title: '同城社区',
+    rows: ['Momo 分享了朝阳公园慢走线', 'Seven 正在找 19:30 柴犬搭子', 'Luna 标记了一个干净补水点']
   },
-  message: {
-    title: '消息',
-    rows: ['Momo：今晚慢走吗？', '系统：你有 2 个搭子邀请', 'Luna：草坪集合～']
+  clinic: {
+    title: '就诊服务',
+    rows: ['附近医院：首都医科大学附属北京朝阳医院', '可预约：疫苗 / 体检 / 皮肤科', '紧急导航：一键生成宠物友好路线']
   },
   mine: {
     title: '我的档案',
-    rows: ['遛遛达人 Lv.12', '今日体力 30/30', '已公开位置：开启']
+    rows: ['遛遛达人 Lv.12 · 今日体力 30/30', '本月遛宠 8 次 · 累计 12.6km', '位置公开：随模式自动切换']
   }
 }
 
-const mapLabels = [
-  { text: '朝阳千渠', type: 'river', x: 18, y: 36 },
-  { text: '幽静湖', type: 'lake', x: 20, y: 22 },
-  { text: '五里桥郊野公园', type: 'park', x: 76, y: 42 },
-  { text: '高尔夫花园', type: 'home', x: 10, y: 58 },
-  { text: '保利·嘉园', type: 'home', x: 38, y: 66 },
-  { text: '首都医科大学附属北京朝阳医院', type: 'hospital', x: 20, y: 82 }
-]
-
-const treeDots = [
-  [8, 18], [13, 21], [18, 16], [27, 12], [34, 20], [61, 12], [80, 10],
-  [9, 43], [17, 47], [29, 45], [67, 48], [74, 50], [88, 44],
-  [7, 74], [15, 70], [56, 77], [68, 73], [88, 78]
-]
+const sidePanelContent = {
+  sign: ['今日签到 +10 骨头币', '连续签到第 5 天', '明天可领取补水券'],
+  route: ['附近推荐：湖边放电路线', '已收藏：朝阳公园慢走线', '上传路线：记录结束后可发布'],
+  task: ['今日任务：遛宠 20 分钟', '社交任务：发送 1 条地图消息', '探索任务：标记 1 个补水点'],
+  water: ['最近补水点 180m', '宠友确认：水源干净', '可一键导航前往'],
+  poop: ['最近排泄点 260m', '含垃圾桶与纸巾提醒', '可标记新的清洁点'],
+  hospital: ['最近医院 1.2km', '营业中 · 可电话预约', '支持紧急路线导航'],
+  toilet: ['最近卫生间 320m', '位于公园东门旁', '宠物可临时等候区']
+}
 
 function MapResizer() {
   const map = useMap()
@@ -93,6 +88,19 @@ function MapResizer() {
       window.removeEventListener('orientationchange', refresh)
     }
   }, [map])
+
+  return null
+}
+
+function MapFollower({ center }) {
+  const map = useMap()
+
+  useEffect(() => {
+    map.flyTo(center, map.getZoom(), {
+      animate: true,
+      duration: 0.55
+    })
+  }, [center, map])
 
   return null
 }
@@ -145,27 +153,43 @@ export default function NewExperience({ onBack }) {
   const [selfBubble, setSelfBubble] = useState('')
   const [walkerBubbles, setWalkerBubbles] = useState(() => Object.fromEntries(walkers.map(w => [w.id, w.bubble])))
   const [sideNotice, setSideNotice] = useState('')
+  const [activeSide, setActiveSide] = useState(null)
+  const [locationStatus, setLocationStatus] = useState('点击 GO 后开始获取定位')
   const dragStartX = useRef(null)
+  const watchId = useRef(null)
+  const demoTimer = useRef(null)
 
   const visibleWalkerIds = modeMeta[mode].visible
   const currentCenter = path[path.length - 1]
   const activePage = navItems[activeNav].id
 
-  useEffect(() => {
-    if (!isWalking) return
-    const timer = window.setInterval(() => {
+  const clearTracking = () => {
+    if (watchId.current !== null && navigator.geolocation) {
+      navigator.geolocation.clearWatch(watchId.current)
+      watchId.current = null
+    }
+    if (demoTimer.current !== null) {
+      window.clearInterval(demoTimer.current)
+      demoTimer.current = null
+    }
+  }
+
+  const startDemoTracking = () => {
+    setLocationStatus('定位不可用，正在使用平滑演示轨迹')
+    demoTimer.current = window.setInterval(() => {
       setSeconds(value => value + 1)
       setPath(prev => {
         const last = prev[prev.length - 1]
         const next = [
-          last[0] + (Math.random() - 0.42) * 0.00016,
-          last[1] + (Math.random() - 0.45) * 0.00016
+          last[0] + (Math.random() - 0.43) * 0.00008,
+          last[1] + (Math.random() - 0.44) * 0.00008
         ]
         return [...prev, next]
       })
     }, 1000)
-    return () => window.clearInterval(timer)
-  }, [isWalking])
+  }
+
+  useEffect(() => () => clearTracking(), [])
 
   const displayTime = useMemo(() => {
     const min = String(Math.floor(seconds / 60)).padStart(2, '0')
@@ -193,14 +217,82 @@ export default function NewExperience({ onBack }) {
     setActiveNav(value => (value + direction + navItems.length) % navItems.length)
   }
 
+  const startWalk = () => {
+    setActiveNav(2)
+    setIsWalking(true)
+    setSeconds(0)
+    setLocationStatus('正在请求实时定位...')
+
+    if (!navigator.geolocation) {
+      startDemoTracking()
+      return
+    }
+
+    watchId.current = navigator.geolocation.watchPosition(
+      (position) => {
+        setSeconds(value => value + 1)
+        setLocationStatus('实时定位中，路线会自动记录')
+        const next = [position.coords.latitude, position.coords.longitude]
+        setPath(prev => {
+          const last = prev[prev.length - 1]
+          if (Math.abs(last[0] - next[0]) < 0.000005 && Math.abs(last[1] - next[1]) < 0.000005) {
+            return prev
+          }
+          return [...prev, next]
+        })
+      },
+      () => {
+        clearTracking()
+        startDemoTracking()
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 3000,
+        timeout: 8000
+      }
+    )
+  }
+
+  const stopWalk = () => {
+    clearTracking()
+    setIsWalking(false)
+    setLocationStatus('路线已暂停，可再次点击 GO 继续记录')
+  }
+
+  const locateMe = () => {
+    setLocationStatus('正在定位当前位置...')
+    if (!navigator.geolocation) {
+      setLocationStatus('当前浏览器不支持定位')
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const next = [position.coords.latitude, position.coords.longitude]
+        setPath(prev => [...prev, next])
+        setLocationStatus('已定位到当前位置')
+      },
+      () => setLocationStatus('定位失败，请检查浏览器权限'),
+      {
+        enableHighAccuracy: true,
+        timeout: 8000,
+        maximumAge: 3000
+      }
+    )
+  }
+
   const handleNavClick = (index) => {
     setActiveNav(index)
     if (navItems[index].id === 'go') {
-      setIsWalking(prev => !prev)
+      if (isWalking) {
+        stopWalk()
+      } else {
+        startWalk()
+      }
     }
   }
 
   const handleSideAction = (action) => {
+    setActiveSide(action)
     setSideNotice(`${action.label} 已打开`)
     window.setTimeout(() => setSideNotice(''), 2200)
   }
@@ -231,6 +323,7 @@ export default function NewExperience({ onBack }) {
         attributionControl={false}
       >
         <MapResizer />
+        <MapFollower center={currentCenter} />
         <TileLayer
           attribution='&copy; OpenStreetMap'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -253,20 +346,6 @@ export default function NewExperience({ onBack }) {
           )
         })}
       </MapContainer>
-
-      <div className="game-map-skin">
-        <div className="pixel-lake" />
-        <div className="pixel-river river-a" />
-        <div className="pixel-river river-b" />
-        {treeDots.map(([x, y], index) => (
-          <span key={`${x}-${y}-${index}`} className="pixel-tree" style={{ left: `${x}%`, top: `${y}%` }} />
-        ))}
-        {mapLabels.map((label) => (
-          <span key={label.text} className={`game-map-label ${label.type}`} style={{ left: `${label.x}%`, top: `${label.y}%` }}>
-            {label.text}
-          </span>
-        ))}
-      </div>
 
       <div className="new-map-overlay" />
 
@@ -296,6 +375,14 @@ export default function NewExperience({ onBack }) {
         <p>{modeMeta[mode].hint}</p>
       </header>
 
+      <section className="map-status-card">
+        <strong>{isWalking ? '记录中' : '准备出发'}</strong>
+        <span>{displayTime} · {Math.max((path.length - 1) * 0.02, 0).toFixed(2)}km</span>
+        <em>{locationStatus}</em>
+      </section>
+
+      <button className="locate-button" onClick={locateMe}>定位</button>
+
       <aside className="new-side-actions">
         {sideActions.map((action) => (
           <button key={action.id} onClick={() => handleSideAction(action)}>
@@ -306,6 +393,16 @@ export default function NewExperience({ onBack }) {
       </aside>
 
       {sideNotice && <div className="side-notice">{sideNotice}</div>}
+
+      {activeSide && (
+        <section className="side-action-panel">
+          <button onClick={() => setActiveSide(null)}>×</button>
+          <h2>{activeSide.label}</h2>
+          {sidePanelContent[activeSide.id]?.map((item) => (
+            <p key={item}>{item}</p>
+          ))}
+        </section>
+      )}
 
       <div className={`new-portal-fx ${modeFx}`} />
 
