@@ -395,8 +395,8 @@ export default function Checkin() {
       {showRecordingModal && (
         <div className="fixed inset-0 bg-cream z-50 flex flex-col">
           <div className="h-14 flex items-center justify-between px-4 border-b border-orange-100 bg-white/90 backdrop-blur-xl z-[1001]">
-            <button onClick={stopRecording} className="text-gray-500">
-              <ChevronLeft size={24} />
+            <button onClick={stopRecording} className="pixel-mini-icon text-cocoa">
+              ‹
             </button>
             <h3 className="font-semibold">正在记录路线</h3>
             <button onClick={stopRecording} className="text-primary">结束</button>
@@ -447,18 +447,21 @@ export default function Checkin() {
               </MapContainer>
             </div>
 
-            <div className="absolute left-0 right-0 bottom-0 z-[1000] bg-white/90 backdrop-blur-xl border-t border-orange-100 px-6 pt-5 pb-[calc(24px+env(safe-area-inset-bottom))] flex items-center justify-center gap-8">
+            <div className="recording-arc-dock">
+              <div className="recording-arc-surface" />
               <button
                 onClick={() => setIsRecording(!isRecording)}
-                className="w-20 h-20 rounded-[28px] pixel-button bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/30"
+                className="recording-arc-button primary"
+                aria-label={isRecording ? '暂停记录' : '继续记录'}
               >
-                {isRecording ? <Pause size={28} /> : <Play size={28} />}
+                <span className="pixel-action-icon">{isRecording ? 'Ⅱ' : '▶'}</span>
               </button>
               <button
                 onClick={stopRecording}
-                className="w-16 h-16 rounded-[24px] pixel-button bg-red-400 flex items-center justify-center text-white shadow-lg"
+                className="recording-arc-button danger"
+                aria-label="结束记录"
               >
-                <X size={24} />
+                <span className="pixel-action-icon">×</span>
               </button>
             </div>
           </div>

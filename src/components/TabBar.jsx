@@ -1,19 +1,18 @@
 import { NavLink } from 'react-router-dom'
-import { Home, Compass, Calendar, ShoppingBag, User } from 'lucide-react'
 
 const tabs = [
-  { path: '/', icon: Home, label: '首页' },
-  { path: '/discover', icon: Compass, label: '发现' },
-  { path: '/checkin', icon: Calendar, label: '打卡' },
-  { path: '/services', icon: ShoppingBag, label: '服务' },
-  { path: '/profile', icon: User, label: '我的' }
+  { path: '/', icon: '⌂', label: '首页' },
+  { path: '/discover', icon: '◉', label: '发现' },
+  { path: '/checkin', icon: '▣', label: '打卡' },
+  { path: '/services', icon: '▤', label: '服务' },
+  { path: '/profile', icon: '♙', label: '我的' }
 ]
 
 export default function TabBar() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-orange-100 z-50">
       <div className="max-w-lg mx-auto flex justify-around items-center h-18 px-2 py-2">
-        {tabs.map(({ path, icon: Icon, label }) => (
+        {tabs.map(({ path, icon, label }) => (
           <NavLink
             key={path}
             to={path}
@@ -23,7 +22,7 @@ export default function TabBar() {
               }`
             }
           >
-            <Icon size={22} />
+            <span className="pixel-tab-icon">{icon}</span>
             <span className="text-xs font-medium">{label}</span>
           </NavLink>
         ))}
