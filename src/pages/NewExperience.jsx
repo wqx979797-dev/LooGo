@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet'
+import { ImageOverlay, MapContainer, Marker, Polyline, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 
 const modeMeta = {
@@ -28,12 +28,20 @@ const navItems = [
   { id: 'mine', label: '我的', icon: 'dog' }
 ]
 
+const MAP_WIDTH = 4000
+const MAP_HEIGHT = 2988
+const IMAGE_BOUNDS = [[0, 0], [MAP_HEIGHT, MAP_WIDTH]]
+
+const toImagePoint = (xPercent, yPercent) => [MAP_HEIGHT * yPercent, MAP_WIDTH * xPercent]
+
 const walkers = [
-  { id: 'p1', name: 'Momo', pet: '比熊', role: 'girl', dog: 'orange', position: [40.0129, 116.4575], bubble: '慢走中～' },
-  { id: 'p2', name: 'Seven', pet: '柴犬', role: 'boy', dog: 'brown', position: [40.014, 116.4591], bubble: '求搭子!' },
-  { id: 'p3', name: 'Luna', pet: '边牧', role: 'girl green', dog: 'black', position: [40.0114, 116.4558], bubble: '草坪见' },
-  { id: 'p4', name: '奶盖', pet: '柯基', role: 'boy blue', dog: 'orange', position: [40.0134, 116.4547], bubble: '代遛结束' }
+  { id: 'p1', name: 'Momo', pet: '比熊', role: 'girl', dog: 'orange', position: toImagePoint(0.53, 0.44), bubble: '慢走中～' },
+  { id: 'p2', name: 'Seven', pet: '柴犬', role: 'boy', dog: 'brown', position: toImagePoint(0.58, 0.53), bubble: '求搭子!' },
+  { id: 'p3', name: 'Luna', pet: '边牧', role: 'girl green', dog: 'black', position: toImagePoint(0.43, 0.62), bubble: '草坪见' },
+  { id: 'p4', name: '奶盖', pet: '柯基', role: 'boy blue', dog: 'orange', position: toImagePoint(0.61, 0.71), bubble: '代遛结束' }
 ]
+
+const START_CENTER = toImagePoint(0.52, 0.56)
 
 const sideActions = [
   { id: 'sign', label: '签到', icon: 'calendar' },
@@ -148,7 +156,7 @@ export default function NewExperience({ onBack }) {
   const [activeNav, setActiveNav] = useState(2)
   const [isWalking, setIsWalking] = useState(false)
   const [seconds, setSeconds] = useState(0)
-  const [path, setPath] = useState([[40.0123, 116.4567]])
+  const [path, setPath] = useState([START_CENTER])
   const [message, setMessage] = useState('')
   const [selfBubble, setSelfBubble] = useState('')
   const [walkerBubbles, setWalkerBubbles] = useState(() => Object.fromEntries(walkers.map(w => [w.id, w.bubble])))
@@ -164,10 +172,7 @@ export default function NewExperience({ onBack }) {
   const activePage = navItems[activeNav].id
 
   const clearTracking = () => {
-    if (watchId.current !== null && navigator.geolocation) {
-      navigator.geolocation.clearWatch(watchId.current)
-      watchId.current = null
-    }
+    watchId.current = null
     if (demoTimer.current !== null) {
       window.clearInterval(demoTimer.current)
       demoTimer.current = null
@@ -181,10 +186,14 @@ export default function NewExperience({ onBack }) {
       setPath(prev => {
         const last = prev[prev.length - 1]
         const next = [
-          last[0] + (Math.random() - 0.43) * 0.00008,
-          last[1] + (Math.random() - 0.44) * 0.00008
+          last[0] + (Math.random() - 0.42) * 3.2,
+          last[1] + (Math.random() - 0.44) * 3.2
         ]
-        return [...prev, next]
+        const clamped = [
+          Math.max(8, Math.min(MAP_HEIGHT - 8, next[0])),
+          Math.max(8, Math.min(MAP_WIDTH - 8, next[1]))
+        ]
+        return [...prev, clamped]
       })
     }, 1000)
   }
@@ -221,36 +230,8 @@ export default function NewExperience({ onBack }) {
     setActiveNav(2)
     setIsWalking(true)
     setSeconds(0)
-    setLocationStatus('正在请求实时定位...')
-
-    if (!navigator.geolocation) {
-      startDemoTracking()
-      return
-    }
-
-    watchId.current = navigator.geolocation.watchPosition(
-      (position) => {
-        setSeconds(value => value + 1)
-        setLocationStatus('实时定位中，路线会自动记录')
-        const next = [position.coords.latitude, position.coords.longitude]
-        setPath(prev => {
-          const last = prev[prev.length - 1]
-          if (Math.abs(last[0] - next[0]) < 0.000005 && Math.abs(last[1] - next[1]) < 0.000005) {
-            return prev
-          }
-          return [...prev, next]
-        })
-      },
-      () => {
-        clearTracking()
-        startDemoTracking()
-      },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 3000,
-        timeout: 8000
-      }
-    )
+    setLocationStatus('当前是底图演示模式，已开始记录演示轨迹')
+    startDemoTracking()
   }
 
   const stopWalk = () => {
@@ -260,24 +241,8 @@ export default function NewExperience({ onBack }) {
   }
 
   const locateMe = () => {
-    setLocationStatus('正在定位当前位置...')
-    if (!navigator.geolocation) {
-      setLocationStatus('当前浏览器不支持定位')
-      return
-    }
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const next = [position.coords.latitude, position.coords.longitude]
-        setPath(prev => [...prev, next])
-        setLocationStatus('已定位到当前位置')
-      },
-      () => setLocationStatus('定位失败，请检查浏览器权限'),
-      {
-        enableHighAccuracy: true,
-        timeout: 8000,
-        maximumAge: 3000
-      }
-    )
+    setPath(prev => [...prev, START_CENTER])
+    setLocationStatus('已回到地图中心位置')
   }
 
   const handleNavClick = (index) => {
@@ -316,20 +281,23 @@ export default function NewExperience({ onBack }) {
   return (
     <div className="new-experience">
       <MapContainer
-        center={currentCenter}
-        zoom={15}
+        crs={L.CRS.Simple}
+        center={START_CENTER}
+        zoom={1}
+        minZoom={0}
+        maxZoom={3}
+        maxBounds={IMAGE_BOUNDS}
+        maxBoundsViscosity={0.92}
+        zoomControl
         style={{ height: '100dvh', minHeight: '100vh', width: '100%' }}
-        zoomControl={false}
+        scrollWheelZoom
+        doubleClickZoom
         attributionControl={false}
       >
         <MapResizer />
         <MapFollower center={currentCenter} />
-        <TileLayer
-          attribution='&copy; OpenStreetMap'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          className="pixel-map-tiles"
-        />
-        <Polyline positions={path} color="#5B4636" weight={5} opacity={0.8} dashArray="8 8" />
+        <ImageOverlay url="/maps/zz.png" bounds={IMAGE_BOUNDS} />
+        <Polyline positions={path} color="#5B4636" weight={6} opacity={0.85} />
         <Marker position={currentCenter} icon={createSelfIcon(selfBubble)}>
           <Popup>我的宠物</Popup>
         </Marker>
@@ -381,7 +349,7 @@ export default function NewExperience({ onBack }) {
         <em>{locationStatus}</em>
       </section>
 
-      <button className="locate-button" onClick={locateMe}>定位</button>
+      <button className="locate-button" onClick={locateMe}>回中心</button>
 
       <aside className="new-side-actions">
         {sideActions.map((action) => (
