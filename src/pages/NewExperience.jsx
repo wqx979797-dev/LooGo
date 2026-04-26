@@ -35,11 +35,11 @@ const IMAGE_BOUNDS = [[0, 0], [MAP_HEIGHT, MAP_WIDTH]]
 const toImagePoint = (xPercent, yPercent) => [MAP_HEIGHT * yPercent, MAP_WIDTH * xPercent]
 
 const walkers = [
-  { id: 'p1', name: 'Momo', pet: '橘猫', asset: '1_marker_90f.gif', position: toImagePoint(0.53, 0.44), bubble: '慢走中～' },
-  { id: 'p2', name: 'Seven', pet: '橘猫', asset: '2_marker_90f.gif', position: toImagePoint(0.58, 0.53), bubble: '求搭子!' },
-  { id: 'p3', name: 'Luna', pet: '柯基', asset: '3_marker_90f.gif', position: toImagePoint(0.43, 0.62), bubble: '草坪见' },
-  { id: 'p4', name: '奶盖', pet: '萨摩耶', asset: '4_marker_90f.gif', position: toImagePoint(0.61, 0.71), bubble: '代遛结束' },
-  { id: 'p5', name: '阿布', pet: '柯基', asset: '6_marker_90f.gif', position: toImagePoint(0.47, 0.36), bubble: '休息中' }
+  { id: 'p1', name: 'Momo', pet: '橘猫', asset: '1_marker_90f.gif', position: toImagePoint(0.49, 0.52), bubble: '慢走中～' },
+  { id: 'p2', name: 'Seven', pet: '橘猫', asset: '2_marker_90f.gif', position: toImagePoint(0.57, 0.54), bubble: '求搭子!' },
+  { id: 'p3', name: 'Luna', pet: '柯基', asset: '3_marker_90f.gif', position: toImagePoint(0.46, 0.62), bubble: '草坪见' },
+  { id: 'p4', name: '奶盖', pet: '萨摩耶', asset: '4_marker_90f.gif', position: toImagePoint(0.61, 0.64), bubble: '代遛结束' },
+  { id: 'p5', name: '阿布', pet: '柯基', asset: '6_marker_90f.gif', position: toImagePoint(0.54, 0.46), bubble: '休息中' }
 ]
 
 const START_CENTER = toImagePoint(0.52, 0.56)
@@ -116,7 +116,19 @@ function MapFollower({ center }) {
 
 const pixelIcon = (type) => `<span class="game-icon ${type}"><i></i></span>`
 
-const characterAsset = (fileName) => `${import.meta.env.BASE_URL}characters/${fileName}`
+const publicAsset = (path) => {
+  const cleanPath = path.replace(/^\//, '')
+  const basePath = import.meta.env.BASE_URL || '/'
+  if (typeof window !== 'undefined') {
+    const isLocalHost = ['localhost', '127.0.0.1'].includes(window.location.hostname)
+    if (isLocalHost && !window.location.pathname.startsWith(basePath)) {
+      return `/${cleanPath}`
+    }
+  }
+  return `${basePath}${cleanPath}`
+}
+const characterAsset = (fileName) => publicAsset(`characters/${fileName}`)
+const mapAsset = (fileName) => publicAsset(`maps/${fileName}`)
 
 const createPixelIcon = (walker, hidden = false, bubble = '') => L.divIcon({
   className: `new-pixel-marker ${hidden ? 'is-hidden' : 'is-visible'}`,
@@ -131,8 +143,9 @@ const createPixelIcon = (walker, hidden = false, bubble = '') => L.divIcon({
 })
 
 const createSelfIcon = (bubble = '', isWalking = false) => L.divIcon({
-  className: 'new-pixel-marker self',
+  className: `new-pixel-marker self ${isWalking ? 'is-walking' : ''}`,
   html: `
+    <span class="new-walk-aura"></span>
     <span class="new-pixel-bubble ${bubble ? 'show' : ''}">${bubble}</span>
     <img class="new-character-sprite self" src="${characterAsset(isWalking ? '5.1_marker_90f.gif' : '5_marker_90f.gif')}" alt="我" />
     <span class="new-pixel-name">我</span>
@@ -147,6 +160,10 @@ export default function NewExperience({ onBack }) {
   const [modeFx, setModeFx] = useState('summon')
   const [activeNav, setActiveNav] = useState(2)
   const [isWalking, setIsWalking] = useState(false)
+  const [hasRouteDraft, setHasRouteDraft] = useState(false)
+  const [showPublishSheet, setShowPublishSheet] = useState(false)
+  const [shareText, setShareText] = useState('今天和豆豆完成了一条超舒服的遛宠路线，推荐给附近宠友！')
+  const [panelExpanded, setPanelExpanded] = useState(false)
   const [seconds, setSeconds] = useState(0)
   const [path, setPath] = useState([START_CENTER])
   const [message, setMessage] = useState('')
@@ -162,6 +179,7 @@ export default function NewExperience({ onBack }) {
   const visibleWalkerIds = modeMeta[mode].visible
   const currentCenter = path[path.length - 1]
   const activePage = navItems[activeNav].id
+  const routeDistance = Math.max((path.length - 1) * 0.02, 0).toFixed(2)
 
   const clearTracking = () => {
     watchId.current = null
@@ -171,8 +189,9 @@ export default function NewExperience({ onBack }) {
     }
   }
 
-  const startDemoTracking = () => {
-    setLocationStatus('定位不可用，正在使用平滑演示轨迹')
+  const startDemoTracking = (statusText = '定位不可用，正在使用平滑演示轨迹') => {
+    clearTracking()
+    setLocationStatus(statusText)
     demoTimer.current = window.setInterval(() => {
       setSeconds(value => value + 1)
       setPath(prev => {
@@ -220,16 +239,45 @@ export default function NewExperience({ onBack }) {
 
   const startWalk = () => {
     setActiveNav(2)
+    setShowPublishSheet(false)
+    setHasRouteDraft(true)
     setIsWalking(true)
     setSeconds(0)
-    setLocationStatus('当前是底图演示模式，已开始记录演示轨迹')
-    startDemoTracking()
+    setPath([START_CENTER])
+    startDemoTracking('当前是底图演示模式，已开始记录演示轨迹')
   }
 
-  const stopWalk = () => {
+  const pauseWalk = () => {
     clearTracking()
     setIsWalking(false)
-    setLocationStatus('路线已暂停，可再次点击 GO 继续记录')
+    setLocationStatus('路线已暂停，可点击继续或结束并上传路线')
+  }
+
+  const resumeWalk = () => {
+    setActiveNav(2)
+    setShowPublishSheet(false)
+    setHasRouteDraft(true)
+    setIsWalking(true)
+    startDemoTracking('继续记录中，路线会平滑延伸')
+  }
+
+  const finishWalk = () => {
+    clearTracking()
+    setIsWalking(false)
+    setHasRouteDraft(false)
+    setShowPublishSheet(true)
+    setLocationStatus('路线已结束，确认后可发布到社区')
+  }
+
+  const publishRoute = () => {
+    setShowPublishSheet(false)
+    setSideNotice('路线已发布到社区与路线库')
+    window.setTimeout(() => setSideNotice(''), 2400)
+  }
+
+  const cancelPublish = () => {
+    setShowPublishSheet(false)
+    setLocationStatus('已取消发布，路线保存在本地草稿')
   }
 
   const locateMe = () => {
@@ -239,9 +287,12 @@ export default function NewExperience({ onBack }) {
 
   const handleNavClick = (index) => {
     setActiveNav(index)
+    setPanelExpanded(false)
     if (navItems[index].id === 'go') {
       if (isWalking) {
-        stopWalk()
+        pauseWalk()
+      } else if (hasRouteDraft) {
+        resumeWalk()
       } else {
         startWalk()
       }
@@ -288,9 +339,9 @@ export default function NewExperience({ onBack }) {
       >
         <MapResizer />
         <MapFollower center={currentCenter} />
-        <ImageOverlay url="/maps/zz.png" bounds={IMAGE_BOUNDS} />
+        <ImageOverlay url={mapAsset('zz.png')} bounds={IMAGE_BOUNDS} />
         <Polyline positions={path} color="#5B4636" weight={6} opacity={0.85} />
-        <Marker position={currentCenter} icon={createSelfIcon(selfBubble, isWalking)}>
+        <Marker key={`self-${isWalking ? 'walk' : 'idle'}`} position={currentCenter} icon={createSelfIcon(selfBubble, isWalking)}>
           <Popup>我的宠物</Popup>
         </Marker>
         {walkers.map((walker) => {
@@ -337,7 +388,7 @@ export default function NewExperience({ onBack }) {
 
       <section className="map-status-card">
         <strong>{isWalking ? '记录中' : '准备出发'}</strong>
-        <span>{displayTime} · {Math.max((path.length - 1) * 0.02, 0).toFixed(2)}km</span>
+        <span>{displayTime} · {routeDistance}km</span>
         <em>{locationStatus}</em>
       </section>
 
@@ -380,6 +431,42 @@ export default function NewExperience({ onBack }) {
         </section>
       )}
 
+      {activePage === 'go' && (isWalking || hasRouteDraft) && !showPublishSheet && (
+        <section className="walk-control-panel">
+          {isWalking ? (
+            <button className="secondary" onClick={pauseWalk}>暂停</button>
+          ) : (
+            <button className="secondary" onClick={resumeWalk}>继续</button>
+          )}
+          <button className="danger" onClick={finishWalk}>结束并上传</button>
+        </section>
+      )}
+
+      {showPublishSheet && (
+        <section className="route-publish-sheet" role="dialog" aria-label="发布遛宠路线">
+          <button className="sheet-close" onClick={cancelPublish}>×</button>
+          <span className="panel-handle" />
+          <h2>遛宠完成！</h2>
+          <p>本次遛宠 {routeDistance}km，耗时 {displayTime}</p>
+          <button className="photo-uploader">
+            <span dangerouslySetInnerHTML={{ __html: pixelIcon('camera') }} />
+            添加照片
+          </button>
+          <label>
+            分享文字
+            <textarea value={shareText} onChange={(event) => setShareText(event.target.value)} />
+          </label>
+          <div className="route-upload-row">
+            <span>同时上传为路线分享</span>
+            <b>已开启</b>
+          </div>
+          <div className="publish-actions">
+            <button onClick={cancelPublish}>取消发布</button>
+            <button onClick={publishRoute}>确认发布</button>
+          </div>
+        </section>
+      )}
+
       <section
         className="new-loop-nav"
         onPointerDown={(event) => { dragStartX.current = event.clientX }}
@@ -409,14 +496,25 @@ export default function NewExperience({ onBack }) {
       </section>
 
       {activePage !== 'go' && (
-        <section className="new-page-panel">
-          <div className="panel-handle" />
+        <section className={`new-page-panel ${panelExpanded ? 'expanded' : ''}`}>
+          <button
+            className="panel-handle"
+            onClick={() => setPanelExpanded(value => !value)}
+            aria-label={panelExpanded ? '收起面板' : '展开面板'}
+          />
           <h2>{panelContent[activePage]?.title}</h2>
           <div className="panel-list">
             {panelContent[activePage]?.rows.map((row) => (
               <button key={row}>{row}</button>
             ))}
           </div>
+          {panelExpanded && (
+            <div className="panel-extra">
+              <p>地图会留在后面，点横杠可以收起面板回到全屏遛宠视野。</p>
+              <button>查看附近推荐</button>
+              <button>发布一条动态</button>
+            </div>
+          )}
         </section>
       )}
     </div>
