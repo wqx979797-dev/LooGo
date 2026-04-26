@@ -3366,3 +3366,201 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* New-experience v3: sticker icons, free zoom map, and liquid GO controls. */
+img.game-icon-img,
+.new-loop-item .game-icon-img,
+.new-side-actions .game-icon-img,
+.facility-marker .game-icon-img,
+.photo-uploader .game-icon-img {
+  display: block;
+  width: 34px;
+  height: 34px;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 5px rgba(63, 52, 40, 0.18));
+}
+
+img.game-icon-img::before,
+img.game-icon-img::after {
+  display: none !important;
+}
+
+.new-side-actions .game-icon-img {
+  width: 31px;
+  height: 31px;
+  transform: none;
+}
+
+.new-loop-item .game-icon-img {
+  width: 32px;
+  height: 32px;
+}
+
+.facility-marker .game-icon-img {
+  width: 42px;
+  height: 42px;
+}
+
+.photo-uploader .game-icon-img {
+  width: 34px;
+  height: 34px;
+}
+
+.panel-card-art .game-icon-img {
+  width: 54px;
+  height: 54px;
+  filter: drop-shadow(0 5px 6px rgba(63, 52, 40, 0.16));
+}
+
+.panel-card-art:has(.game-icon-img)::before {
+  display: none;
+}
+
+.new-loop-item.go.active .game-icon-img {
+  display: none;
+}
+
+.new-loop-item.go.route-active.active {
+  width: 86px;
+  height: 86px;
+  animation: liquidCore 2.6s ease-in-out infinite;
+}
+
+.new-loop-item.go.route-active.active b::after {
+  content: "记录中";
+}
+
+.new-loop-item.go.route-active:not(.active) .go-liquid-actions {
+  display: none;
+}
+
+.go-liquid-actions {
+  position: absolute;
+  left: 50%;
+  bottom: 64px;
+  z-index: -1;
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  transform: translateX(-50%);
+  padding: 7px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 130%, rgba(116, 188, 69, 0.72), transparent 42%),
+    rgba(255, 252, 239, 0.8);
+  box-shadow:
+    0 12px 26px rgba(63, 52, 40, 0.15),
+    inset 0 0 0 1px rgba(255,255,255,0.72);
+  backdrop-filter: blur(18px);
+  transform-origin: 50% 100%;
+  animation: liquidRise 360ms cubic-bezier(.22, 1.45, .28, 1) both;
+}
+
+.go-liquid-actions::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -17px;
+  width: 38px;
+  height: 28px;
+  transform: translateX(-50%);
+  border-radius: 0 0 999px 999px;
+  background: rgba(255, 252, 239, 0.72);
+  filter: blur(1px);
+}
+
+.go-action {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  min-width: 72px;
+  height: 38px;
+  padding: 0 13px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+  white-space: nowrap;
+  text-shadow: 0 1px 0 rgba(74, 57, 41, 0.22);
+  box-shadow: inset 0 -3px 0 rgba(75, 57, 41, 0.14), 0 7px 14px rgba(63, 52, 40, 0.12);
+  cursor: pointer;
+  transition: transform 180ms cubic-bezier(.2, 1.4, .3, 1), filter 180ms ease;
+}
+
+.go-action:active {
+  transform: scale(0.92) translateY(2px);
+  filter: saturate(1.1);
+}
+
+.go-action.continue {
+  background: linear-gradient(180deg, #9ce25e, #5dac3d);
+}
+
+.go-action.finish {
+  min-width: 98px;
+  background: linear-gradient(180deg, #ffb49d, #ef806e);
+}
+
+@keyframes liquidRise {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(16px) scaleX(0.55) scaleY(0.72);
+    border-radius: 999px 999px 50% 50%;
+  }
+
+  62% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-2px) scaleX(1.08) scaleY(0.94);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+@keyframes liquidCore {
+  0%, 100% {
+    transform: translate(calc(-50% + var(--x)), -50%) scale(1);
+    border-radius: 50%;
+  }
+
+  46% {
+    transform: translate(calc(-50% + var(--x)), -52%) scaleX(1.06) scaleY(0.96);
+    border-radius: 44% 56% 52% 48%;
+  }
+}
+
+.new-loop-item.go.route-active.active b {
+  font-size: 19px;
+}
+
+.new-loop-item.go.route-active.active b::after {
+  display: block;
+  margin-top: -1px;
+  font-size: 11px;
+}
+
+@media (max-width: 430px) {
+  .go-liquid-actions {
+    bottom: 62px;
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .go-action {
+    min-width: 64px;
+    height: 35px;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+
+  .go-action.finish {
+    min-width: 88px;
+  }
+}

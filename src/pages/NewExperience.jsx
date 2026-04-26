@@ -22,10 +22,10 @@ const modeMeta = {
 
 const navItems = [
   { id: 'shop', label: '商城', icon: 'shop' },
-  { id: 'community', label: '社区', icon: 'people' },
+  { id: 'community', label: '社区', icon: 'community' },
   { id: 'go', label: 'GO', icon: 'go' },
-  { id: 'clinic', label: '就诊', icon: 'hospital' },
-  { id: 'mine', label: '我的', icon: 'dog' }
+  { id: 'messages', label: '消息', icon: 'message' },
+  { id: 'mine', label: '我的', icon: 'reward' }
 ]
 
 const MAP_WIDTH = 4000
@@ -77,15 +77,15 @@ const panelContent = {
       { title: '周末宠物友好草坪局', meta: '同城活动 · 可一键报名', tag: '活动', art: 'flag' }
     ]
   },
-  clinic: {
-    title: '就诊服务',
-    subtitle: '附近宠物医院、疫苗、体检与紧急路线',
-    hero: '安心就诊',
+  messages: {
+    title: '宠友消息',
+    subtitle: '附近宠友、搭子邀请和服务通知都在这里',
+    hero: '消息中心',
     cards: [
-      { title: '首都宠物友好医院', meta: '1.2km · 营业中 · 可急诊', tag: '医院', art: 'hospital' },
-      { title: '年度疫苗预约', meta: '明日 10:30 有号 · 支持提醒', tag: '疫苗', art: 'calendar' },
-      { title: '皮肤科在线预问诊', meta: '上传照片 · 15 分钟内回复', tag: '问诊', art: 'chat' },
-      { title: '紧急路线导航', meta: '避开拥堵 · 自动生成宠物友好路线', tag: '导航', art: 'route' }
+      { title: 'Momo 发来搭子邀请', meta: '今晚 19:30 · 湖边慢走线 · 可加入', tag: '搭子', art: 'community' },
+      { title: '路线评论提醒', meta: 'Seven 夸你的补水点标记很有用', tag: '评论', art: 'message' },
+      { title: '服务进度通知', meta: '上门代喂订单已完成 · 附 3 张照片', tag: '服务', art: 'task' },
+      { title: '系统奖励到账', meta: '路线发布奖励 +20 骨头币', tag: '奖励', art: 'reward' }
     ]
   },
   mine: {
@@ -94,7 +94,7 @@ const panelContent = {
     hero: '遛遛达人 Lv.12',
     cards: [
       { title: '本月遛宠报告', meta: '8 次 · 12.6km · 超过 72% 宠友', tag: '报告', art: 'task' },
-      { title: '豆豆的宠物档案', meta: '柯基 · 3 岁 · 喜欢草坪路线', tag: '宠物', art: 'dog' },
+      { title: '豆豆的宠物档案', meta: '柯基 · 3 岁 · 喜欢草坪路线', tag: '宠物', art: 'reward' },
       { title: '我的路线收藏', meta: '6 条路线 · 2 条公开分享', tag: '路线', art: 'route' },
       { title: '隐私与位置模式', meta: '随独遛 / loogo / 搭子自动切换', tag: '隐私', art: 'shield' }
     ]
@@ -188,7 +188,19 @@ function MapZoomTracker({ onZoom }) {
   return null
 }
 
-const pixelIcon = (type) => `<span class="game-icon ${type}"><i></i></span>`
+const iconNameMap = {
+  sign: 'task',
+  calendar: 'task',
+  people: 'community',
+  dog: 'reward',
+  hospital: 'hospital',
+  clinic: 'clinic',
+  leash: 'route',
+  snack: 'reward',
+  flag: 'route',
+  shield: 'reward',
+  chat: 'message'
+}
 
 const publicAsset = (path) => {
   const cleanPath = path.replace(/^\//, '')
@@ -203,6 +215,8 @@ const publicAsset = (path) => {
 }
 const characterAsset = (fileName) => publicAsset(`characters/${fileName}`)
 const mapAsset = (fileName) => publicAsset(`maps/${fileName}`)
+const iconAsset = (type) => publicAsset(`icons/${iconNameMap[type] ?? type}.png`)
+const pixelIcon = (type) => `<img class="game-icon game-icon-img ${type}" src="${iconAsset(type)}" alt="" />`
 
 const createPixelIcon = (walker, hidden = false, bubble = '', markerScale = 1) => L.divIcon({
   className: `new-pixel-marker ${hidden ? 'is-hidden' : 'is-visible'}`,
@@ -436,13 +450,11 @@ export default function NewExperience({ onBack }) {
       <MapContainer
         crs={L.CRS.Simple}
         center={START_CENTER}
-        zoom={0}
-        minZoom={-0.5}
-        maxZoom={3}
+        zoom={-0.65}
+        minZoom={-4}
+        maxZoom={6}
         zoomSnap={0.25}
         zoomDelta={0.5}
-        maxBounds={IMAGE_BOUNDS}
-        maxBoundsViscosity={0.92}
         zoomControl
         zoomAnimation={false}
         fadeAnimation={false}
@@ -562,17 +574,6 @@ export default function NewExperience({ onBack }) {
         </section>
       )}
 
-      {activePage === 'go' && (isWalking || hasRouteDraft) && !showPublishSheet && (
-        <section className="walk-control-panel">
-          {isWalking ? (
-            <button className="secondary" onClick={pauseWalk}>暂停</button>
-          ) : (
-            <button className="secondary" onClick={resumeWalk}>继续</button>
-          )}
-          <button className="danger" onClick={finishWalk}>结束并上传</button>
-        </section>
-      )}
-
       {showPublishSheet && (
         <section className="route-publish-sheet" role="dialog" aria-label="发布遛宠路线">
           <button className="sheet-close" onClick={cancelPublish}>×</button>
@@ -611,7 +612,7 @@ export default function NewExperience({ onBack }) {
               <button
                 key={item.id}
                 onClick={() => handleNavClick(index)}
-                className={`new-loop-item offset-${offset} ${offset === 0 ? 'active' : ''} ${item.id === 'go' ? 'go' : ''}`}
+                className={`new-loop-item offset-${offset} ${offset === 0 ? 'active' : ''} ${item.id === 'go' ? 'go' : ''} ${item.id === 'go' && (isWalking || hasRouteDraft) ? 'route-active' : ''}`}
                 style={{
                   '--x': `${offset * 86}px`,
                   '--scale': 1 - Math.abs(offset) * 0.14,
@@ -620,6 +621,36 @@ export default function NewExperience({ onBack }) {
               >
                 <span dangerouslySetInnerHTML={{ __html: pixelIcon(item.icon) }} />
                 <b>{item.id === 'go' && isWalking ? displayTime : item.label}</b>
+                {item.id === 'go' && activePage === 'go' && (isWalking || hasRouteDraft) && !showPublishSheet && (
+                  <span className="go-liquid-actions">
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      className="go-action continue"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        if (isWalking) {
+                          pauseWalk()
+                        } else {
+                          resumeWalk()
+                        }
+                      }}
+                    >
+                      {isWalking ? '暂停' : '继续'}
+                    </span>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      className="go-action finish"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        finishWalk()
+                      }}
+                    >
+                      结束并上传
+                    </span>
+                  </span>
+                )}
               </button>
             )
           })}
@@ -636,7 +667,7 @@ export default function NewExperience({ onBack }) {
           {activePanelDetail ? (
             <article className="panel-detail-card">
               <button className="panel-back" onClick={() => setActivePanelDetail(null)}>返回</button>
-              <span className={`panel-card-art ${activePanelDetail.art}`}></span>
+              <span className="panel-card-art" dangerouslySetInnerHTML={{ __html: pixelIcon(activePanelDetail.art) }} />
               <i>{activePanelDetail.tag}</i>
               <h2>{activePanelDetail.title}</h2>
               <p>{activePanelDetail.meta}</p>
@@ -648,7 +679,7 @@ export default function NewExperience({ onBack }) {
           ) : (
             <>
               <div className="panel-hero">
-                <span className={`panel-card-art ${panelContent[activePage]?.cards[0].art}`}></span>
+                <span className="panel-card-art" dangerouslySetInnerHTML={{ __html: pixelIcon(panelContent[activePage]?.cards[0].art) }} />
                 <div>
                   <em>{panelContent[activePage]?.hero}</em>
                   <h2>{panelContent[activePage]?.title}</h2>
@@ -658,7 +689,7 @@ export default function NewExperience({ onBack }) {
               <div className="panel-card-grid">
                 {panelContent[activePage]?.cards.map((card) => (
                   <button key={card.title} onClick={() => setActivePanelDetail(card)}>
-                    <span className={`panel-card-art ${card.art}`}></span>
+                    <span className="panel-card-art" dangerouslySetInnerHTML={{ __html: pixelIcon(card.art) }} />
                     <i>{card.tag}</i>
                     <strong>{card.title}</strong>
                     <small>{card.meta}</small>
