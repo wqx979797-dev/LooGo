@@ -3564,3 +3564,224 @@ img.game-icon-img::after {
     min-width: 88px;
   }
 }
+
+/* New-experience v4: phone-scaled HUD, safer action panels, and real-map toggle. */
+.new-top-actions {
+  position: fixed;
+  top: calc(10px + env(safe-area-inset-top));
+  right: 10px;
+  z-index: 985;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  pointer-events: auto;
+}
+
+.new-top-actions .new-back-button,
+.new-top-actions .new-map-mode-button {
+  position: static;
+  padding: 7px 10px;
+  border: 1px solid rgba(63, 52, 40, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 250, 239, 0.78);
+  color: var(--hud-ink);
+  box-shadow: 0 8px 22px rgba(63, 52, 40, 0.12);
+  backdrop-filter: blur(14px);
+  font-size: clamp(11px, 2.7vw, 13px);
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.new-top-actions .new-map-mode-button.real {
+  color: #fff;
+  background: linear-gradient(180deg, #6cb8ff, #3f8adc);
+}
+
+.new-side-actions {
+  top: calc(132px + env(safe-area-inset-top));
+  right: max(7px, 1.8vw);
+  gap: clamp(6px, 1.6vw, 10px);
+}
+
+.new-side-actions button {
+  width: clamp(54px, 11.2vw, 66px);
+  min-height: clamp(60px, 12vw, 74px);
+  border-radius: clamp(17px, 4vw, 22px);
+}
+
+.new-side-actions .game-icon-img {
+  width: clamp(34px, 7.2vw, 44px);
+  height: clamp(34px, 7.2vw, 44px);
+  transform: none;
+}
+
+.new-side-actions b {
+  max-width: none;
+  font-size: clamp(10px, 2.45vw, 13px);
+  line-height: 1.08;
+}
+
+.new-loop-nav {
+  height: clamp(126px, 25dvh, 158px);
+}
+
+.new-loop-nav::before {
+  bottom: calc(-1 * clamp(72px, 14dvh, 96px));
+  width: min(620px, 124vw);
+  height: clamp(188px, 34dvh, 236px);
+}
+
+.new-loop-track {
+  width: min(100vw, 480px);
+  height: clamp(126px, 25dvh, 158px);
+}
+
+.new-loop-item {
+  top: clamp(76px, 15dvh, 98px);
+  width: clamp(66px, 14vw, 80px);
+  height: clamp(66px, 14vw, 80px);
+}
+
+.new-loop-item .game-icon-img {
+  width: clamp(42px, 9vw, 54px);
+  height: clamp(42px, 9vw, 54px);
+  transform: none;
+}
+
+.new-loop-item b {
+  font-size: clamp(12px, 2.75vw, 15px);
+}
+
+.new-loop-item.go.active,
+.new-loop-item.go.route-active.active {
+  top: clamp(46px, 9dvh, 62px);
+  width: clamp(94px, 19vw, 116px);
+  height: clamp(94px, 19vw, 116px);
+}
+
+.new-loop-item.go.active b {
+  font-size: clamp(23px, 5vw, 30px);
+}
+
+.new-loop-item.go.active b::after {
+  font-size: clamp(12px, 2.8vw, 16px);
+}
+
+.new-message-panel {
+  bottom: calc(clamp(124px, 24dvh, 150px) + env(safe-area-inset-bottom));
+  right: clamp(76px, 16vw, 96px);
+}
+
+.go-liquid-actions {
+  top: 50%;
+  bottom: auto;
+  left: 50%;
+  z-index: 3;
+  width: clamp(230px, 58vw, 294px);
+  justify-content: space-between;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: liquidStretch 360ms cubic-bezier(.22, 1.45, .28, 1) both;
+}
+
+.go-liquid-actions::after {
+  display: none;
+}
+
+.go-action {
+  pointer-events: auto;
+  min-width: clamp(72px, 18vw, 92px);
+  height: clamp(38px, 8.2vw, 46px);
+  font-size: clamp(12px, 2.8vw, 14px);
+}
+
+.go-action.finish {
+  min-width: clamp(96px, 25vw, 122px);
+}
+
+@keyframes liquidStretch {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scaleX(0.28) scaleY(0.76);
+  }
+
+  62% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scaleX(1.08) scaleY(0.96);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.side-action-panel {
+  right: clamp(66px, 14vw, 88px);
+  top: calc(132px + env(safe-area-inset-top));
+  width: min(246px, calc(100vw - 92px));
+  padding-bottom: 14px;
+}
+
+.side-action-panel > button {
+  position: static;
+}
+
+.side-action-panel > .side-panel-close {
+  position: absolute;
+  right: 8px;
+  top: 7px;
+  width: 28px;
+  height: 28px;
+}
+
+.side-action-panel > .side-primary-action {
+  position: static;
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  font-size: 14px;
+}
+
+.new-character-sprite,
+.new-character-sprite.self {
+  width: clamp(150px, 32vw, 184px);
+  height: clamp(150px, 32vw, 184px);
+}
+
+.new-pixel-name {
+  font-size: clamp(10px, 2.35vw, 12px);
+}
+
+.facility-marker .game-icon-img {
+  width: clamp(44px, 9vw, 56px);
+  height: clamp(44px, 9vw, 56px);
+}
+
+.facility-marker b {
+  font-size: clamp(10px, 2.3vw, 12px);
+}
+
+@media (max-width: 430px) {
+  .new-mode-switch {
+    top: calc(62px + env(safe-area-inset-top));
+    width: min(54vw, 258px);
+  }
+
+  .map-status-card {
+    top: calc(116px + env(safe-area-inset-top));
+    max-width: calc(100vw - 96px);
+  }
+
+  .new-top-actions {
+    right: 8px;
+    gap: 5px;
+  }
+}

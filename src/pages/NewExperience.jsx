@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ImageOverlay, MapContainer, Marker, Polyline, Popup, useMap, useMapEvents } from 'react-leaflet'
+import { ImageOverlay, MapContainer, Marker, Polyline, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 
 const modeMeta = {
@@ -11,12 +11,12 @@ const modeMeta = {
   loogo: {
     label: 'loogo',
     hint: '正常模式，发现附近宠友',
-    visible: ['p1', 'p2', 'p3', 'p4', 'p5']
+    visible: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11', 'p12']
   },
   buddy: {
     label: '搭子',
     hint: '只显示已建立搭子关系的人',
-    visible: ['p1', 'p3', 'p5']
+    visible: ['p1', 'p3', 'p5', 'p8', 'p11']
   }
 }
 
@@ -31,15 +31,26 @@ const navItems = [
 const MAP_WIDTH = 4000
 const MAP_HEIGHT = 2988
 const IMAGE_BOUNDS = [[0, 0], [MAP_HEIGHT, MAP_WIDTH]]
+const PIXEL_INITIAL_ZOOM = -1.42
+const PIXEL_MIN_ZOOM = -1.68
+const REAL_INITIAL_ZOOM = 16
+const START_CENTER_REAL = [39.92915, 116.60963]
 
 const toImagePoint = (xPercent, yPercent) => [MAP_HEIGHT * yPercent, MAP_WIDTH * xPercent]
 
 const walkers = [
-  { id: 'p1', name: 'Momo', pet: '橘猫', asset: '1_marker_90f.gif', position: toImagePoint(0.28, 0.34), bubble: '慢走中～' },
-  { id: 'p2', name: 'Seven', pet: '橘猫', asset: '2_marker_90f.gif', position: toImagePoint(0.72, 0.36), bubble: '求搭子!' },
-  { id: 'p3', name: 'Luna', pet: '柯基', asset: '3_marker_90f.gif', position: toImagePoint(0.25, 0.68), bubble: '草坪见' },
-  { id: 'p4', name: '奶盖', pet: '萨摩耶', asset: '4_marker_90f.gif', position: toImagePoint(0.76, 0.68), bubble: '代遛结束' },
-  { id: 'p5', name: '阿布', pet: '柯基', asset: '6_marker_90f.gif', position: toImagePoint(0.56, 0.47), bubble: '休息中' }
+  { id: 'p1', name: 'Momo', pet: '橘猫', asset: '1_marker_90f.gif', position: toImagePoint(0.42, 0.48), realPosition: [39.92982, 116.60872], bubble: '慢走中～' },
+  { id: 'p2', name: 'Seven', pet: '橘猫', asset: '2_marker_90f.gif', position: toImagePoint(0.59, 0.49), realPosition: [39.92946, 116.61042], bubble: '求搭子!' },
+  { id: 'p3', name: 'Luna', pet: '柯基', asset: '3_marker_90f.gif', position: toImagePoint(0.48, 0.39), realPosition: [39.93022, 116.60942], bubble: '草坪见' },
+  { id: 'p4', name: '奶盖', pet: '萨摩耶', asset: '4_marker_90f.gif', position: toImagePoint(0.62, 0.61), realPosition: [39.92864, 116.61086], bubble: '代遛结束' },
+  { id: 'p5', name: '阿布', pet: '柯基', asset: '6_marker_90f.gif', position: toImagePoint(0.36, 0.59), realPosition: [39.92888, 116.60796], bubble: '休息中' },
+  { id: 'p6', name: '栗子', pet: '柴犬', asset: '1_marker_90f.gif', position: toImagePoint(0.70, 0.44), realPosition: [39.92992, 116.61172], bubble: '补水啦' },
+  { id: 'p7', name: '花花', pet: '猫咪', asset: '2_marker_90f.gif', position: toImagePoint(0.30, 0.44), realPosition: [39.93004, 116.60718], bubble: '晒太阳' },
+  { id: 'p8', name: '团子', pet: '柯基', asset: '3_marker_90f.gif', position: toImagePoint(0.53, 0.68), realPosition: [39.92792, 116.60968], bubble: '等搭子' },
+  { id: 'p9', name: '豆包', pet: '柴犬', asset: '4_marker_90f.gif', position: toImagePoint(0.78, 0.58), realPosition: [39.9289, 116.61212], bubble: '路线不错' },
+  { id: 'p10', name: '小八', pet: '柯基', asset: '6_marker_90f.gif', position: toImagePoint(0.24, 0.52), realPosition: [39.92924, 116.6067], bubble: '慢跑中' },
+  { id: 'p11', name: '乌龙', pet: '柴犬', asset: '1_marker_90f.gif', position: toImagePoint(0.64, 0.31), realPosition: [39.9311, 116.61078], bubble: '已签到' },
+  { id: 'p12', name: '可乐', pet: '猫咪', asset: '2_marker_90f.gif', position: toImagePoint(0.39, 0.72), realPosition: [39.92756, 116.60852], bubble: '回家啦' }
 ]
 
 const START_CENTER = toImagePoint(0.52, 0.56)
@@ -113,22 +124,22 @@ const sidePanelContent = {
 
 const facilityGroups = {
   water: [
-    { id: 'water-1', label: '泉泉补水点', position: toImagePoint(0.42, 0.44), type: 'water' },
-    { id: 'water-2', label: '林边水站', position: toImagePoint(0.68, 0.57), type: 'water' },
-    { id: 'water-3', label: '湖口补给', position: toImagePoint(0.33, 0.72), type: 'water' }
+    { id: 'water-1', label: '泉泉补水点', position: toImagePoint(0.42, 0.44), realPosition: [39.93005, 116.60875], type: 'water' },
+    { id: 'water-2', label: '林边水站', position: toImagePoint(0.68, 0.57), realPosition: [39.92905, 116.61155], type: 'water' },
+    { id: 'water-3', label: '湖口补给', position: toImagePoint(0.33, 0.72), realPosition: [39.92755, 116.60785], type: 'water' }
   ],
   poop: [
-    { id: 'poop-1', label: '清洁桶 A', position: toImagePoint(0.38, 0.52), type: 'poop' },
-    { id: 'poop-2', label: '草坪排泄点', position: toImagePoint(0.62, 0.66), type: 'poop' },
-    { id: 'poop-3', label: '南门清洁站', position: toImagePoint(0.48, 0.78), type: 'poop' }
+    { id: 'poop-1', label: '清洁桶 A', position: toImagePoint(0.38, 0.52), realPosition: [39.92925, 116.60835], type: 'poop' },
+    { id: 'poop-2', label: '草坪排泄点', position: toImagePoint(0.62, 0.66), realPosition: [39.92815, 116.61085], type: 'poop' },
+    { id: 'poop-3', label: '南门清洁站', position: toImagePoint(0.48, 0.78), realPosition: [39.92715, 116.60928], type: 'poop' }
   ],
   hospital: [
-    { id: 'hospital-1', label: '宠物医院', position: toImagePoint(0.28, 0.58), type: 'hospital' },
-    { id: 'hospital-2', label: '夜间急诊', position: toImagePoint(0.77, 0.42), type: 'hospital' }
+    { id: 'hospital-1', label: '宠物医院', position: toImagePoint(0.28, 0.58), realPosition: [39.9287, 116.60728], type: 'hospital' },
+    { id: 'hospital-2', label: '夜间急诊', position: toImagePoint(0.77, 0.42), realPosition: [39.93025, 116.61226], type: 'hospital' }
   ],
   toilet: [
-    { id: 'toilet-1', label: '公园卫生间', position: toImagePoint(0.36, 0.38), type: 'toilet' },
-    { id: 'toilet-2', label: '北侧卫生间', position: toImagePoint(0.73, 0.73), type: 'toilet' }
+    { id: 'toilet-1', label: '公园卫生间', position: toImagePoint(0.36, 0.38), realPosition: [39.93042, 116.60818], type: 'toilet' },
+    { id: 'toilet-2', label: '北侧卫生间', position: toImagePoint(0.73, 0.73), realPosition: [39.92752, 116.61192], type: 'toilet' }
   ]
 }
 
@@ -138,6 +149,14 @@ const routeGuidePath = [
   toImagePoint(0.42, 0.44),
   toImagePoint(0.38, 0.52),
   toImagePoint(0.33, 0.72)
+]
+
+const routeGuidePathReal = [
+  START_CENTER_REAL,
+  [39.92902, 116.60918],
+  [39.93005, 116.60875],
+  [39.92925, 116.60835],
+  [39.92755, 116.60785]
 ]
 
 function MapResizer() {
@@ -261,6 +280,7 @@ const createFacilityIcon = (place, markerScale = 1) => L.divIcon({
 })
 
 export default function NewExperience({ onBack }) {
+  const [mapMode, setMapMode] = useState('pixel')
   const [mode, setMode] = useState('loogo')
   const [modeFx, setModeFx] = useState('summon')
   const [activeNav, setActiveNav] = useState(2)
@@ -289,7 +309,9 @@ export default function NewExperience({ onBack }) {
   const currentCenter = path[path.length - 1]
   const activePage = navItems[activeNav].id
   const routeDistance = Math.max((path.length - 1) * 0.02, 0).toFixed(2)
-  const markerScale = Math.max(0.46, Math.min(1.8, 0.68 * (2 ** zoomLevel)))
+  const markerScale = mapMode === 'real'
+    ? Math.max(0.95, Math.min(1.42, zoomLevel / 15))
+    : Math.max(0.92, Math.min(1.76, 1.04 * (2 ** (zoomLevel + 1.45))))
   const visibleFacilities = visibleFacilityType ? facilityGroups[visibleFacilityType] ?? [] : []
 
   const clearTracking = () => {
@@ -300,27 +322,50 @@ export default function NewExperience({ onBack }) {
     }
   }
 
+  const currentStartCenter = () => (mapMode === 'real' ? START_CENTER_REAL : START_CENTER)
+
   const startDemoTracking = (statusText = '定位不可用，正在使用平滑演示轨迹') => {
     clearTracking()
     setLocationStatus(statusText)
+    const trackingMapMode = mapMode
     demoTimer.current = window.setInterval(() => {
       setSeconds(value => value + 1)
       setPath(prev => {
         const last = prev[prev.length - 1]
+        if (trackingMapMode === 'real') {
+          const next = [
+            last[0] + 0.00008 + (Math.random() - 0.5) * 0.00003,
+            last[1] + 0.00007 + (Math.random() - 0.5) * 0.00004
+          ]
+          return [...prev, next]
+        }
+
         const next = [
           last[0] + (Math.random() - 0.42) * 3.2,
           last[1] + (Math.random() - 0.44) * 3.2
         ]
-        const clamped = [
+        return [...prev, [
           Math.max(8, Math.min(MAP_HEIGHT - 8, next[0])),
           Math.max(8, Math.min(MAP_WIDTH - 8, next[1]))
-        ]
-        return [...prev, clamped]
+        ]]
       })
     }, 1000)
   }
 
   useEffect(() => () => clearTracking(), [])
+
+  useEffect(() => {
+    clearTracking()
+    setIsWalking(false)
+    setHasRouteDraft(false)
+    setShowPublishSheet(false)
+    setGuideMode(false)
+    setVisibleFacilityType(null)
+    setActiveSide(null)
+    setSeconds(0)
+    setPath([mapMode === 'real' ? START_CENTER_REAL : START_CENTER])
+    setLocationStatus(mapMode === 'real' ? '现实地图已开启，路线与导航使用真实经纬度演示' : '像素地图已开启，点击 GO 开始记录路线')
+  }, [mapMode])
 
   const displayTime = useMemo(() => {
     const min = String(Math.floor(seconds / 60)).padStart(2, '0')
@@ -354,8 +399,8 @@ export default function NewExperience({ onBack }) {
     setHasRouteDraft(true)
     setIsWalking(true)
     setSeconds(0)
-    setPath([START_CENTER])
-    startDemoTracking('当前是底图演示模式，已开始记录演示轨迹')
+    setPath([currentStartCenter()])
+    startDemoTracking(mapMode === 'real' ? '现实地图记录中，路线按真实经纬度模拟前进' : '当前是底图演示模式，已开始记录演示轨迹')
   }
 
   const pauseWalk = () => {
@@ -369,7 +414,7 @@ export default function NewExperience({ onBack }) {
     setShowPublishSheet(false)
     setHasRouteDraft(true)
     setIsWalking(true)
-    startDemoTracking('继续记录中，路线会平滑延伸')
+    startDemoTracking(mapMode === 'real' ? '继续真实路线记录，人物会沿路线移动' : '继续记录中，路线会平滑延伸')
   }
 
   const finishWalk = () => {
@@ -392,8 +437,8 @@ export default function NewExperience({ onBack }) {
   }
 
   const locateMe = () => {
-    setPath(prev => [...prev, START_CENTER])
-    setLocationStatus('已回到地图中心位置')
+    setPath(prev => [...prev, currentStartCenter()])
+    setLocationStatus(mapMode === 'real' ? '已回到现实地图中心位置' : '已回到地图中心位置')
   }
 
   const handleNavClick = (index) => {
@@ -429,6 +474,20 @@ export default function NewExperience({ onBack }) {
     window.setTimeout(() => setSideNotice(''), 2200)
   }
 
+  const sideActionConfirm = () => {
+    if (!activeSide) return
+    if (activeSide.id === 'sign') {
+      setSideNotice('签到完成，骨头币 +10')
+    } else if (facilityGroups[activeSide.id]) {
+      setGuideMode(true)
+      setSideNotice(`${activeSide.label} 导航已开启`)
+    } else {
+      setSideNotice(`${activeSide.label} 已确认`)
+    }
+    setActiveSide(null)
+    window.setTimeout(() => setSideNotice(''), 2200)
+  }
+
   const sendMessage = () => {
     const text = message.trim()
     if (!text) return
@@ -448,11 +507,12 @@ export default function NewExperience({ onBack }) {
   return (
     <div className={`new-experience ${activePage !== 'go' ? 'is-panel-mode' : ''}`}>
       <MapContainer
-        crs={L.CRS.Simple}
-        center={START_CENTER}
-        zoom={-0.65}
-        minZoom={-4}
-        maxZoom={6}
+        key={mapMode}
+        crs={mapMode === 'pixel' ? L.CRS.Simple : undefined}
+        center={mapMode === 'pixel' ? START_CENTER : START_CENTER_REAL}
+        zoom={mapMode === 'pixel' ? PIXEL_INITIAL_ZOOM : REAL_INITIAL_ZOOM}
+        minZoom={mapMode === 'pixel' ? PIXEL_MIN_ZOOM : 12}
+        maxZoom={mapMode === 'pixel' ? 6 : 19}
         zoomSnap={0.25}
         zoomDelta={0.5}
         zoomControl
@@ -466,8 +526,15 @@ export default function NewExperience({ onBack }) {
         <MapResizer />
         <MapZoomTracker onZoom={setZoomLevel} />
         <MapFollower center={currentCenter} />
-        <ImageOverlay url={mapAsset('zz.png')} bounds={IMAGE_BOUNDS} />
-        {guideMode && <Polyline positions={routeGuidePath} color="#f4a244" weight={7} opacity={0.86} dashArray="14 10" />}
+        {mapMode === 'pixel' ? (
+          <ImageOverlay url={mapAsset('zz.png')} bounds={IMAGE_BOUNDS} />
+        ) : (
+          <TileLayer
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
+            maxZoom={19}
+          />
+        )}
+        {guideMode && <Polyline positions={mapMode === 'real' ? routeGuidePathReal : routeGuidePath} color="#f4a244" weight={7} opacity={0.86} dashArray="14 10" />}
         <Polyline positions={path} color="#5B4636" weight={6} opacity={0.85} />
         <Marker key={`self-${isWalking ? 'walk' : 'idle'}-${markerScale.toFixed(2)}`} position={currentCenter} icon={createSelfIcon(selfBubble, isWalking, markerScale)}>
           <Popup>我的宠物</Popup>
@@ -477,7 +544,7 @@ export default function NewExperience({ onBack }) {
           return (
             <Marker
               key={`${walker.id}-${mode}-${visible}`}
-              position={walker.position}
+              position={mapMode === 'real' ? walker.realPosition : walker.position}
               icon={createPixelIcon(walker, !visible, visible ? walkerBubbles[walker.id] : '', markerScale)}
             >
               <Popup>{walker.name} · {walker.pet}</Popup>
@@ -487,7 +554,7 @@ export default function NewExperience({ onBack }) {
         {visibleFacilities.map((place) => (
           <Marker
             key={place.id}
-            position={place.position}
+            position={mapMode === 'real' ? place.realPosition : place.position}
             icon={createFacilityIcon(place, markerScale)}
           >
             <Popup>{place.label}</Popup>
@@ -498,7 +565,15 @@ export default function NewExperience({ onBack }) {
       <div className="new-map-overlay" />
 
       {activePage === 'go' && <header className="new-top-panel">
-        <button className="new-back-button" onClick={onBack}>旧版</button>
+        <div className="new-top-actions">
+          <button className="new-back-button" onClick={onBack}>旧版</button>
+          <button
+            className={`new-map-mode-button ${mapMode === 'real' ? 'real' : ''}`}
+            onClick={() => setMapMode(value => value === 'pixel' ? 'real' : 'pixel')}
+          >
+            {mapMode === 'real' ? '像素地图' : '现实地图'}
+          </button>
+        </div>
         <section className="player-card">
           <div className="player-avatar">
             <span className="pixel-dog-face"><i></i></span>
@@ -544,14 +619,14 @@ export default function NewExperience({ onBack }) {
 
       {activePage === 'go' && activeSide && (
         <section className="side-action-panel">
-          <button onClick={() => setActiveSide(null)}>×</button>
+          <button className="side-panel-close" onClick={() => setActiveSide(null)}>×</button>
           <h2>{sidePanelContent[activeSide.id]?.title ?? activeSide.label}</h2>
           {sidePanelContent[activeSide.id]?.rows.map((item) => (
             <p key={item}>{item}</p>
           ))}
           <button
             className="side-primary-action"
-            onClick={() => handleSideAction(activeSide)}
+            onClick={sideActionConfirm}
           >
             {sidePanelContent[activeSide.id]?.action ?? '确认'}
           </button>
