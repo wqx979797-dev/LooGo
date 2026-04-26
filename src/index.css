@@ -2189,6 +2189,20 @@ body {
   transform-origin: center bottom;
 }
 
+.new-character-sprite {
+  display: block;
+  width: 132px;
+  height: 132px;
+  object-fit: contain;
+  image-rendering: auto;
+  filter: drop-shadow(0 8px 8px rgba(63, 52, 40, 0.18));
+}
+
+.new-character-sprite.self {
+  width: 140px;
+  height: 140px;
+}
+
 .pixel-party {
   width: 64px;
   height: 42px;

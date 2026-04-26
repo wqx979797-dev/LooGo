@@ -11,12 +11,12 @@ const modeMeta = {
   loogo: {
     label: 'loogo',
     hint: '正常模式，发现附近宠友',
-    visible: ['p1', 'p2', 'p3', 'p4']
+    visible: ['p1', 'p2', 'p3', 'p4', 'p5']
   },
   buddy: {
     label: '搭子',
     hint: '只显示已建立搭子关系的人',
-    visible: ['p1', 'p3']
+    visible: ['p1', 'p3', 'p5']
   }
 }
 
@@ -35,10 +35,11 @@ const IMAGE_BOUNDS = [[0, 0], [MAP_HEIGHT, MAP_WIDTH]]
 const toImagePoint = (xPercent, yPercent) => [MAP_HEIGHT * yPercent, MAP_WIDTH * xPercent]
 
 const walkers = [
-  { id: 'p1', name: 'Momo', pet: '比熊', role: 'girl', dog: 'orange', position: toImagePoint(0.53, 0.44), bubble: '慢走中～' },
-  { id: 'p2', name: 'Seven', pet: '柴犬', role: 'boy', dog: 'brown', position: toImagePoint(0.58, 0.53), bubble: '求搭子!' },
-  { id: 'p3', name: 'Luna', pet: '边牧', role: 'girl green', dog: 'black', position: toImagePoint(0.43, 0.62), bubble: '草坪见' },
-  { id: 'p4', name: '奶盖', pet: '柯基', role: 'boy blue', dog: 'orange', position: toImagePoint(0.61, 0.71), bubble: '代遛结束' }
+  { id: 'p1', name: 'Momo', pet: '橘猫', asset: '1_marker_90f.gif', position: toImagePoint(0.53, 0.44), bubble: '慢走中～' },
+  { id: 'p2', name: 'Seven', pet: '橘猫', asset: '2_marker_90f.gif', position: toImagePoint(0.58, 0.53), bubble: '求搭子!' },
+  { id: 'p3', name: 'Luna', pet: '柯基', asset: '3_marker_90f.gif', position: toImagePoint(0.43, 0.62), bubble: '草坪见' },
+  { id: 'p4', name: '奶盖', pet: '萨摩耶', asset: '4_marker_90f.gif', position: toImagePoint(0.61, 0.71), bubble: '代遛结束' },
+  { id: 'p5', name: '阿布', pet: '柯基', asset: '6_marker_90f.gif', position: toImagePoint(0.47, 0.36), bubble: '休息中' }
 ]
 
 const START_CENTER = toImagePoint(0.52, 0.56)
@@ -115,39 +116,30 @@ function MapFollower({ center }) {
 
 const pixelIcon = (type) => `<span class="game-icon ${type}"><i></i></span>`
 
-const pixelAvatar = (role = 'boy', dog = 'orange') => `
-  <span class="pixel-party">
-    <span class="pixel-human ${role}">
-      <i class="head"></i><i class="body"></i><i class="leg l"></i><i class="leg r"></i>
-    </span>
-    <span class="pixel-dog ${dog}">
-      <i class="ear"></i><i class="body"></i><i class="tail"></i><i class="leg a"></i><i class="leg b"></i>
-    </span>
-  </span>
-`
+const characterAsset = (fileName) => `${import.meta.env.BASE_URL}characters/${fileName}`
 
 const createPixelIcon = (walker, hidden = false, bubble = '') => L.divIcon({
   className: `new-pixel-marker ${hidden ? 'is-hidden' : 'is-visible'}`,
   html: `
     <span class="new-pixel-bubble ${bubble ? 'show' : ''}">${bubble}</span>
-    ${pixelAvatar(walker.role, walker.dog)}
+    <img class="new-character-sprite" src="${characterAsset(walker.asset)}" alt="${walker.name}" />
     <span class="new-pixel-name">${walker.name}</span>
   `,
-  iconSize: [100, 92],
-  iconAnchor: [50, 64],
-  popupAnchor: [0, -54]
+  iconSize: [132, 132],
+  iconAnchor: [66, 116],
+  popupAnchor: [0, -96]
 })
 
-const createSelfIcon = (bubble = '') => L.divIcon({
+const createSelfIcon = (bubble = '', isWalking = false) => L.divIcon({
   className: 'new-pixel-marker self',
   html: `
     <span class="new-pixel-bubble ${bubble ? 'show' : ''}">${bubble}</span>
-    ${pixelAvatar('boy blue self', 'orange self')}
+    <img class="new-character-sprite self" src="${characterAsset(isWalking ? '5.1_marker_90f.gif' : '5_marker_90f.gif')}" alt="我" />
     <span class="new-pixel-name">我</span>
   `,
-  iconSize: [108, 94],
-  iconAnchor: [54, 66],
-  popupAnchor: [0, -56]
+  iconSize: [140, 140],
+  iconAnchor: [70, 124],
+  popupAnchor: [0, -104]
 })
 
 export default function NewExperience({ onBack }) {
@@ -298,7 +290,7 @@ export default function NewExperience({ onBack }) {
         <MapFollower center={currentCenter} />
         <ImageOverlay url="/maps/zz.png" bounds={IMAGE_BOUNDS} />
         <Polyline positions={path} color="#5B4636" weight={6} opacity={0.85} />
-        <Marker position={currentCenter} icon={createSelfIcon(selfBubble)}>
+        <Marker position={currentCenter} icon={createSelfIcon(selfBubble, isWalking)}>
           <Popup>我的宠物</Popup>
         </Marker>
         {walkers.map((walker) => {
