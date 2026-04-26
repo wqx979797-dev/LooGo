@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ImageOverlay, MapContainer, Marker, Polyline, Popup, useMap } from 'react-leaflet'
+import { ImageOverlay, MapContainer, Marker, Polyline, Popup, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 
 const modeMeta = {
@@ -35,11 +35,11 @@ const IMAGE_BOUNDS = [[0, 0], [MAP_HEIGHT, MAP_WIDTH]]
 const toImagePoint = (xPercent, yPercent) => [MAP_HEIGHT * yPercent, MAP_WIDTH * xPercent]
 
 const walkers = [
-  { id: 'p1', name: 'Momo', pet: '橘猫', asset: '1_marker_90f.gif', position: toImagePoint(0.49, 0.52), bubble: '慢走中～' },
-  { id: 'p2', name: 'Seven', pet: '橘猫', asset: '2_marker_90f.gif', position: toImagePoint(0.57, 0.54), bubble: '求搭子!' },
-  { id: 'p3', name: 'Luna', pet: '柯基', asset: '3_marker_90f.gif', position: toImagePoint(0.46, 0.62), bubble: '草坪见' },
-  { id: 'p4', name: '奶盖', pet: '萨摩耶', asset: '4_marker_90f.gif', position: toImagePoint(0.61, 0.64), bubble: '代遛结束' },
-  { id: 'p5', name: '阿布', pet: '柯基', asset: '6_marker_90f.gif', position: toImagePoint(0.54, 0.46), bubble: '休息中' }
+  { id: 'p1', name: 'Momo', pet: '橘猫', asset: '1_marker_90f.gif', position: toImagePoint(0.28, 0.34), bubble: '慢走中～' },
+  { id: 'p2', name: 'Seven', pet: '橘猫', asset: '2_marker_90f.gif', position: toImagePoint(0.72, 0.36), bubble: '求搭子!' },
+  { id: 'p3', name: 'Luna', pet: '柯基', asset: '3_marker_90f.gif', position: toImagePoint(0.25, 0.68), bubble: '草坪见' },
+  { id: 'p4', name: '奶盖', pet: '萨摩耶', asset: '4_marker_90f.gif', position: toImagePoint(0.76, 0.68), bubble: '代遛结束' },
+  { id: 'p5', name: '阿布', pet: '柯基', asset: '6_marker_90f.gif', position: toImagePoint(0.56, 0.47), bubble: '休息中' }
 ]
 
 const START_CENTER = toImagePoint(0.52, 0.56)
@@ -57,31 +57,88 @@ const sideActions = [
 const panelContent = {
   shop: {
     title: '宠物商城',
-    rows: ['补水随行杯 · 今日推荐', '夜遛反光牵引绳 · 附近有货', '能量零食包 · 可用 120 骨头币抵扣']
+    subtitle: '给今天的遛宠补一点装备和能量',
+    hero: '今日补给站',
+    cards: [
+      { title: '像素补水随行杯', meta: '今日推荐 · 1.2km 门店有货', tag: '补水', art: 'water' },
+      { title: '夜遛反光牵引绳', meta: '社区热卖 · 可用骨头币抵扣', tag: '夜遛', art: 'leash' },
+      { title: '能量零食包', meta: '120 骨头币抵扣 · 柴犬最爱', tag: '零食', art: 'snack' },
+      { title: '便携拾便套装', meta: '排泄点旁热销 · 今日九折', tag: '清洁', art: 'poop' }
+    ]
   },
   community: {
     title: '同城社区',
-    rows: ['Momo 分享了朝阳公园慢走线', 'Seven 正在找 19:30 柴犬搭子', 'Luna 标记了一个干净补水点']
+    subtitle: '看附近宠友的路线、打卡和搭子邀请',
+    hero: '附近正在热聊',
+    cards: [
+      { title: 'Momo 分享了湖边慢走线', meta: '1.8km · 18 张打卡图 · 适合小型犬', tag: '路线', art: 'route' },
+      { title: 'Seven 找 19:30 柴犬搭子', meta: '680m · 已有 3 位宠友响应', tag: '搭子', art: 'people' },
+      { title: 'Luna 标记干净补水点', meta: '910m · 12 人确认可用', tag: '补水', art: 'water' },
+      { title: '周末宠物友好草坪局', meta: '同城活动 · 可一键报名', tag: '活动', art: 'flag' }
+    ]
   },
   clinic: {
     title: '就诊服务',
-    rows: ['附近医院：首都医科大学附属北京朝阳医院', '可预约：疫苗 / 体检 / 皮肤科', '紧急导航：一键生成宠物友好路线']
+    subtitle: '附近宠物医院、疫苗、体检与紧急路线',
+    hero: '安心就诊',
+    cards: [
+      { title: '首都宠物友好医院', meta: '1.2km · 营业中 · 可急诊', tag: '医院', art: 'hospital' },
+      { title: '年度疫苗预约', meta: '明日 10:30 有号 · 支持提醒', tag: '疫苗', art: 'calendar' },
+      { title: '皮肤科在线预问诊', meta: '上传照片 · 15 分钟内回复', tag: '问诊', art: 'chat' },
+      { title: '紧急路线导航', meta: '避开拥堵 · 自动生成宠物友好路线', tag: '导航', art: 'route' }
+    ]
   },
   mine: {
     title: '我的档案',
-    rows: ['遛遛达人 Lv.12 · 今日体力 30/30', '本月遛宠 8 次 · 累计 12.6km', '位置公开：随模式自动切换']
+    subtitle: '等级、路线、宠物资料和位置公开设置',
+    hero: '遛遛达人 Lv.12',
+    cards: [
+      { title: '本月遛宠报告', meta: '8 次 · 12.6km · 超过 72% 宠友', tag: '报告', art: 'task' },
+      { title: '豆豆的宠物档案', meta: '柯基 · 3 岁 · 喜欢草坪路线', tag: '宠物', art: 'dog' },
+      { title: '我的路线收藏', meta: '6 条路线 · 2 条公开分享', tag: '路线', art: 'route' },
+      { title: '隐私与位置模式', meta: '随独遛 / loogo / 搭子自动切换', tag: '隐私', art: 'shield' }
+    ]
   }
 }
 
 const sidePanelContent = {
-  sign: ['今日签到 +10 骨头币', '连续签到第 5 天', '明天可领取补水券'],
-  route: ['附近推荐：湖边放电路线', '已收藏：朝阳公园慢走线', '上传路线：记录结束后可发布'],
-  task: ['今日任务：遛宠 20 分钟', '社交任务：发送 1 条地图消息', '探索任务：标记 1 个补水点'],
-  water: ['最近补水点 180m', '宠友确认：水源干净', '可一键导航前往'],
-  poop: ['最近排泄点 260m', '含垃圾桶与纸巾提醒', '可标记新的清洁点'],
-  hospital: ['最近医院 1.2km', '营业中 · 可电话预约', '支持紧急路线导航'],
-  toilet: ['最近卫生间 320m', '位于公园东门旁', '宠物可临时等候区']
+  sign: { title: '今日签到', rows: ['连续签到第 5 天', '领取 +10 骨头币', '明天可领补水券'], action: '立即签到' },
+  route: { title: '路线指引', rows: ['推荐湖边放电路线', '途经补水点和排泄点', '可在结束后上传为路线'], action: '开始指引' },
+  task: { title: '今日任务', rows: ['遛宠 20 分钟', '发送 1 条地图消息', '标记 1 个便民点'], action: '查看任务' },
+  water: { title: '补水点', rows: ['已在地图显示 3 个补水点', '最近约 180m', '宠友确认水源干净'], action: '导航过去' },
+  poop: { title: '排泄点', rows: ['已在地图显示 3 个排泄点', '含垃圾桶与纸巾提醒', '可继续标记新点位'], action: '导航过去' },
+  hospital: { title: '医院', rows: ['已在地图显示附近医院', '最近约 1.2km', '支持紧急路线'], action: '紧急导航' },
+  toilet: { title: '卫生间', rows: ['已在地图显示附近卫生间', '最近约 320m', '包含宠物等候区备注'], action: '导航过去' }
 }
+
+const facilityGroups = {
+  water: [
+    { id: 'water-1', label: '泉泉补水点', position: toImagePoint(0.42, 0.44), type: 'water' },
+    { id: 'water-2', label: '林边水站', position: toImagePoint(0.68, 0.57), type: 'water' },
+    { id: 'water-3', label: '湖口补给', position: toImagePoint(0.33, 0.72), type: 'water' }
+  ],
+  poop: [
+    { id: 'poop-1', label: '清洁桶 A', position: toImagePoint(0.38, 0.52), type: 'poop' },
+    { id: 'poop-2', label: '草坪排泄点', position: toImagePoint(0.62, 0.66), type: 'poop' },
+    { id: 'poop-3', label: '南门清洁站', position: toImagePoint(0.48, 0.78), type: 'poop' }
+  ],
+  hospital: [
+    { id: 'hospital-1', label: '宠物医院', position: toImagePoint(0.28, 0.58), type: 'hospital' },
+    { id: 'hospital-2', label: '夜间急诊', position: toImagePoint(0.77, 0.42), type: 'hospital' }
+  ],
+  toilet: [
+    { id: 'toilet-1', label: '公园卫生间', position: toImagePoint(0.36, 0.38), type: 'toilet' },
+    { id: 'toilet-2', label: '北侧卫生间', position: toImagePoint(0.73, 0.73), type: 'toilet' }
+  ]
+}
+
+const routeGuidePath = [
+  START_CENTER,
+  toImagePoint(0.49, 0.52),
+  toImagePoint(0.42, 0.44),
+  toImagePoint(0.38, 0.52),
+  toImagePoint(0.33, 0.72)
+]
 
 function MapResizer() {
   const map = useMap()
@@ -114,6 +171,23 @@ function MapFollower({ center }) {
   return null
 }
 
+function MapZoomTracker({ onZoom }) {
+  const map = useMapEvents({
+    zoom() {
+      onZoom(map.getZoom())
+    },
+    zoomend() {
+      onZoom(map.getZoom())
+    }
+  })
+
+  useEffect(() => {
+    onZoom(map.getZoom())
+  }, [map, onZoom])
+
+  return null
+}
+
 const pixelIcon = (type) => `<span class="game-icon ${type}"><i></i></span>`
 
 const publicAsset = (path) => {
@@ -130,29 +204,46 @@ const publicAsset = (path) => {
 const characterAsset = (fileName) => publicAsset(`characters/${fileName}`)
 const mapAsset = (fileName) => publicAsset(`maps/${fileName}`)
 
-const createPixelIcon = (walker, hidden = false, bubble = '') => L.divIcon({
+const createPixelIcon = (walker, hidden = false, bubble = '', markerScale = 1) => L.divIcon({
   className: `new-pixel-marker ${hidden ? 'is-hidden' : 'is-visible'}`,
   html: `
-    <span class="new-pixel-bubble ${bubble ? 'show' : ''}">${bubble}</span>
-    <img class="new-character-sprite" src="${characterAsset(walker.asset)}" alt="${walker.name}" />
-    <span class="new-pixel-name">${walker.name}</span>
+    <span class="marker-scale" style="--marker-scale:${markerScale}">
+      <span class="new-pixel-bubble ${bubble ? 'show' : ''}">${bubble}</span>
+      <img class="new-character-sprite" src="${characterAsset(walker.asset)}" alt="${walker.name}" />
+      <span class="new-pixel-name">${walker.name}</span>
+    </span>
   `,
   iconSize: [132, 132],
   iconAnchor: [66, 116],
   popupAnchor: [0, -96]
 })
 
-const createSelfIcon = (bubble = '', isWalking = false) => L.divIcon({
+const createSelfIcon = (bubble = '', isWalking = false, markerScale = 1) => L.divIcon({
   className: `new-pixel-marker self ${isWalking ? 'is-walking' : ''}`,
   html: `
-    <span class="new-walk-aura"></span>
-    <span class="new-pixel-bubble ${bubble ? 'show' : ''}">${bubble}</span>
-    <img class="new-character-sprite self" src="${characterAsset(isWalking ? '5.1_marker_90f.gif' : '5_marker_90f.gif')}" alt="我" />
-    <span class="new-pixel-name">我</span>
+    <span class="marker-scale" style="--marker-scale:${markerScale}">
+      <span class="new-walk-aura"></span>
+      <span class="new-pixel-bubble ${bubble ? 'show' : ''}">${bubble}</span>
+      <img class="new-character-sprite self" src="${characterAsset(isWalking ? '5.1_marker_90f.gif' : '5_marker_90f.gif')}" alt="我" />
+      <span class="new-pixel-name">我</span>
+    </span>
   `,
   iconSize: [140, 140],
   iconAnchor: [70, 124],
   popupAnchor: [0, -104]
+})
+
+const createFacilityIcon = (place, markerScale = 1) => L.divIcon({
+  className: `facility-marker ${place.type}`,
+  html: `
+    <span class="marker-scale" style="--marker-scale:${Math.max(0.72, markerScale * 0.92)}">
+      ${pixelIcon(place.type)}
+      <b>${place.label}</b>
+    </span>
+  `,
+  iconSize: [92, 80],
+  iconAnchor: [46, 68],
+  popupAnchor: [0, -62]
 })
 
 export default function NewExperience({ onBack }) {
@@ -164,6 +255,10 @@ export default function NewExperience({ onBack }) {
   const [showPublishSheet, setShowPublishSheet] = useState(false)
   const [shareText, setShareText] = useState('今天和豆豆完成了一条超舒服的遛宠路线，推荐给附近宠友！')
   const [panelExpanded, setPanelExpanded] = useState(false)
+  const [activePanelDetail, setActivePanelDetail] = useState(null)
+  const [visibleFacilityType, setVisibleFacilityType] = useState(null)
+  const [guideMode, setGuideMode] = useState(false)
+  const [zoomLevel, setZoomLevel] = useState(0)
   const [seconds, setSeconds] = useState(0)
   const [path, setPath] = useState([START_CENTER])
   const [message, setMessage] = useState('')
@@ -180,6 +275,8 @@ export default function NewExperience({ onBack }) {
   const currentCenter = path[path.length - 1]
   const activePage = navItems[activeNav].id
   const routeDistance = Math.max((path.length - 1) * 0.02, 0).toFixed(2)
+  const markerScale = Math.max(0.46, Math.min(1.8, 0.68 * (2 ** zoomLevel)))
+  const visibleFacilities = visibleFacilityType ? facilityGroups[visibleFacilityType] ?? [] : []
 
   const clearTracking = () => {
     watchId.current = null
@@ -288,6 +385,7 @@ export default function NewExperience({ onBack }) {
   const handleNavClick = (index) => {
     setActiveNav(index)
     setPanelExpanded(false)
+    setActivePanelDetail(null)
     if (navItems[index].id === 'go') {
       if (isWalking) {
         pauseWalk()
@@ -301,7 +399,19 @@ export default function NewExperience({ onBack }) {
 
   const handleSideAction = (action) => {
     setActiveSide(action)
-    setSideNotice(`${action.label} 已打开`)
+    if (facilityGroups[action.id]) {
+      setVisibleFacilityType(action.id)
+      setGuideMode(false)
+      setSideNotice(`${action.label} 已显示在地图上`)
+    } else if (action.id === 'route') {
+      setGuideMode(true)
+      setVisibleFacilityType('water')
+      setSideNotice('路线指引已开启')
+    } else if (action.id === 'sign') {
+      setSideNotice('签到成功，骨头币 +10')
+    } else {
+      setSideNotice(`${action.label} 已打开`)
+    }
     window.setTimeout(() => setSideNotice(''), 2200)
   }
 
@@ -322,26 +432,32 @@ export default function NewExperience({ onBack }) {
   }
 
   return (
-    <div className="new-experience">
+    <div className={`new-experience ${activePage !== 'go' ? 'is-panel-mode' : ''}`}>
       <MapContainer
         crs={L.CRS.Simple}
         center={START_CENTER}
-        zoom={1}
-        minZoom={0}
+        zoom={0}
+        minZoom={-0.5}
         maxZoom={3}
+        zoomSnap={0.25}
+        zoomDelta={0.5}
         maxBounds={IMAGE_BOUNDS}
         maxBoundsViscosity={0.92}
         zoomControl
+        zoomAnimation={false}
+        fadeAnimation={false}
         style={{ height: '100dvh', minHeight: '100vh', width: '100%' }}
         scrollWheelZoom
         doubleClickZoom
         attributionControl={false}
       >
         <MapResizer />
+        <MapZoomTracker onZoom={setZoomLevel} />
         <MapFollower center={currentCenter} />
         <ImageOverlay url={mapAsset('zz.png')} bounds={IMAGE_BOUNDS} />
+        {guideMode && <Polyline positions={routeGuidePath} color="#f4a244" weight={7} opacity={0.86} dashArray="14 10" />}
         <Polyline positions={path} color="#5B4636" weight={6} opacity={0.85} />
-        <Marker key={`self-${isWalking ? 'walk' : 'idle'}`} position={currentCenter} icon={createSelfIcon(selfBubble, isWalking)}>
+        <Marker key={`self-${isWalking ? 'walk' : 'idle'}-${markerScale.toFixed(2)}`} position={currentCenter} icon={createSelfIcon(selfBubble, isWalking, markerScale)}>
           <Popup>我的宠物</Popup>
         </Marker>
         {walkers.map((walker) => {
@@ -350,17 +466,26 @@ export default function NewExperience({ onBack }) {
             <Marker
               key={`${walker.id}-${mode}-${visible}`}
               position={walker.position}
-              icon={createPixelIcon(walker, !visible, visible ? walkerBubbles[walker.id] : '')}
+              icon={createPixelIcon(walker, !visible, visible ? walkerBubbles[walker.id] : '', markerScale)}
             >
               <Popup>{walker.name} · {walker.pet}</Popup>
             </Marker>
           )
         })}
+        {visibleFacilities.map((place) => (
+          <Marker
+            key={place.id}
+            position={place.position}
+            icon={createFacilityIcon(place, markerScale)}
+          >
+            <Popup>{place.label}</Popup>
+          </Marker>
+        ))}
       </MapContainer>
 
       <div className="new-map-overlay" />
 
-      <header className="new-top-panel">
+      {activePage === 'go' && <header className="new-top-panel">
         <button className="new-back-button" onClick={onBack}>旧版</button>
         <section className="player-card">
           <div className="player-avatar">
@@ -384,34 +509,40 @@ export default function NewExperience({ onBack }) {
           ))}
         </div>
         <p>{modeMeta[mode].hint}</p>
-      </header>
+      </header>}
 
-      <section className="map-status-card">
+      {activePage === 'go' && <section className="map-status-card">
         <strong>{isWalking ? '记录中' : '准备出发'}</strong>
         <span>{displayTime} · {routeDistance}km</span>
         <em>{locationStatus}</em>
-      </section>
+      </section>}
 
-      <button className="locate-button" onClick={locateMe}>回中心</button>
+      {activePage === 'go' && <button className="locate-button" onClick={locateMe}>回中心</button>}
 
-      <aside className="new-side-actions">
+      {activePage === 'go' && <aside className="new-side-actions">
         {sideActions.map((action) => (
           <button key={action.id} onClick={() => handleSideAction(action)}>
             <span dangerouslySetInnerHTML={{ __html: pixelIcon(action.icon) }} />
             <b>{action.label}</b>
           </button>
         ))}
-      </aside>
+      </aside>}
 
       {sideNotice && <div className="side-notice">{sideNotice}</div>}
 
-      {activeSide && (
+      {activePage === 'go' && activeSide && (
         <section className="side-action-panel">
           <button onClick={() => setActiveSide(null)}>×</button>
-          <h2>{activeSide.label}</h2>
-          {sidePanelContent[activeSide.id]?.map((item) => (
+          <h2>{sidePanelContent[activeSide.id]?.title ?? activeSide.label}</h2>
+          {sidePanelContent[activeSide.id]?.rows.map((item) => (
             <p key={item}>{item}</p>
           ))}
+          <button
+            className="side-primary-action"
+            onClick={() => handleSideAction(activeSide)}
+          >
+            {sidePanelContent[activeSide.id]?.action ?? '确认'}
+          </button>
         </section>
       )}
 
@@ -502,18 +633,44 @@ export default function NewExperience({ onBack }) {
             onClick={() => setPanelExpanded(value => !value)}
             aria-label={panelExpanded ? '收起面板' : '展开面板'}
           />
-          <h2>{panelContent[activePage]?.title}</h2>
-          <div className="panel-list">
-            {panelContent[activePage]?.rows.map((row) => (
-              <button key={row}>{row}</button>
-            ))}
-          </div>
-          {panelExpanded && (
-            <div className="panel-extra">
-              <p>地图会留在后面，点横杠可以收起面板回到全屏遛宠视野。</p>
-              <button>查看附近推荐</button>
-              <button>发布一条动态</button>
-            </div>
+          {activePanelDetail ? (
+            <article className="panel-detail-card">
+              <button className="panel-back" onClick={() => setActivePanelDetail(null)}>返回</button>
+              <span className={`panel-card-art ${activePanelDetail.art}`}></span>
+              <i>{activePanelDetail.tag}</i>
+              <h2>{activePanelDetail.title}</h2>
+              <p>{activePanelDetail.meta}</p>
+              <div className="panel-detail-actions">
+                <button>收藏</button>
+                <button>立即查看</button>
+              </div>
+            </article>
+          ) : (
+            <>
+              <div className="panel-hero">
+                <span className={`panel-card-art ${panelContent[activePage]?.cards[0].art}`}></span>
+                <div>
+                  <em>{panelContent[activePage]?.hero}</em>
+                  <h2>{panelContent[activePage]?.title}</h2>
+                  <p>{panelContent[activePage]?.subtitle}</p>
+                </div>
+              </div>
+              <div className="panel-card-grid">
+                {panelContent[activePage]?.cards.map((card) => (
+                  <button key={card.title} onClick={() => setActivePanelDetail(card)}>
+                    <span className={`panel-card-art ${card.art}`}></span>
+                    <i>{card.tag}</i>
+                    <strong>{card.title}</strong>
+                    <small>{card.meta}</small>
+                  </button>
+                ))}
+              </div>
+              <div className="panel-extra">
+                <p>地图会留在后面，点横杠可以收起或展开内容面板。</p>
+                <button onClick={() => setPanelExpanded(true)}>展开更多内容</button>
+                <button onClick={() => setActiveNav(2)}>回到 GO 地图</button>
+              </div>
+            </>
           )}
         </section>
       )}
