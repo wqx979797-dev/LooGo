@@ -31,9 +31,9 @@ const navItems = [
 const MAP_WIDTH = 8192
 const MAP_HEIGHT = 8192
 const IMAGE_BOUNDS = [[0, 0], [MAP_HEIGHT, MAP_WIDTH]]
-const PIXEL_INITIAL_ZOOM = -1.42
+const PIXEL_INITIAL_ZOOM = -1.18
 const PIXEL_MIN_ZOOM = -1.68
-const REAL_INITIAL_ZOOM = 16
+const REAL_INITIAL_ZOOM = 15
 const START_CENTER_REAL = [39.92915, 116.60963]
 
 const toImagePoint = (xPercent, yPercent) => [MAP_HEIGHT * yPercent, MAP_WIDTH * xPercent]
@@ -53,7 +53,7 @@ const walkers = [
   { id: 'p12', name: '可乐', pet: '猫咪', asset: '2_marker_90f.gif', position: toImagePoint(0.83, 0.28), realPosition: [39.9412, 116.6268], bubble: '回家啦' }
 ]
 
-const START_CENTER = toImagePoint(0.52, 0.56)
+const START_CENTER = toImagePoint(0.51, 0.37)
 
 const sideActions = [
   { id: 'sign', label: '签到', icon: 'calendar' },
@@ -158,6 +158,43 @@ const routeGuidePathReal = [
   [39.92925, 116.60835],
   [39.92755, 116.60785]
 ]
+
+const createRoadLikeRoute = (from, to, real = false) => {
+  if (real) {
+    const midA = [from[0], (from[1] + to[1]) / 2]
+    const midB = [(from[0] + to[0]) / 2, midA[1]]
+    const midC = [midB[0], to[1]]
+    return [from, midA, midB, midC, to]
+  }
+
+  const midX = (from[1] + to[1]) / 2
+  const midY = (from[0] + to[0]) / 2
+  return [
+    from,
+    [from[0], midX],
+    [midY, midX],
+    [midY, to[1]],
+    to
+  ]
+}
+
+const interpolateRoute = (route, stepsPerSegment = 9) => {
+  if (!route || route.length < 2) return route ?? []
+  const points = []
+  for (let index = 0; index < route.length - 1; index += 1) {
+    const start = route[index]
+    const end = route[index + 1]
+    for (let step = 0; step < stepsPerSegment; step += 1) {
+      const t = step / stepsPerSegment
+      points.push([
+        start[0] + (end[0] - start[0]) * t,
+        start[1] + (end[1] - start[1]) * t
+      ])
+    }
+  }
+  points.push(route[route.length - 1])
+  return points
+}
 
 function MapResizer() {
   const map = useMap()
@@ -289,18 +326,21 @@ export default function NewExperience({ onBack }) {
   const [activePanelDetail, setActivePanelDetail] = useState(null)
   const [visibleFacilityType, setVisibleFacilityType] = useState(null)
   const [guideMode, setGuideMode] = useState(false)
+  const [activeRoutePath, setActiveRoutePath] = useState([])
   const [zoomLevel, setZoomLevel] = useState(0)
   const [seconds, setSeconds] = useState(0)
   const [path, setPath] = useState([START_CENTER])
   const [message, setMessage] = useState('')
   const [selfBubble, setSelfBubble] = useState('')
   const [walkerBubbles, setWalkerBubbles] = useState(() => Object.fromEntries(walkers.map(w => [w.id, ''])))
+  const [walkerHistory, setWalkerHistory] = useState(() => Object.fromEntries(walkers.map(w => [w.id, []])))
   const [sideNotice, setSideNotice] = useState('')
   const [activeSide, setActiveSide] = useState(null)
   const [locationStatus, setLocationStatus] = useState('点击 GO 后开始获取定位')
   const dragStartX = useRef(null)
   const watchId = useRef(null)
   const demoTimer = useRef(null)
+  const routeCursor = useRef(0)
 
   const visibleWalkerIds = modeMeta[mode].visible
   const isRealPoint = (point) => Array.isArray(point) && Math.abs(point[0]) <= 90 && Math.abs(point[1]) <= 180
@@ -312,8 +352,8 @@ export default function NewExperience({ onBack }) {
   const activePage = navItems[activeNav].id
   const routeDistance = Math.max((path.length - 1) * 0.02, 0).toFixed(2)
   const markerScale = mapMode === 'real'
-    ? Math.max(0.72, Math.min(1.02, zoomLevel / 18))
-    : Math.max(0.56, Math.min(1.05, 0.68 * (2 ** (zoomLevel + 1.45))))
+    ? Math.max(0.42, Math.min(0.68, zoomLevel / 23))
+    : Math.max(0.42, Math.min(0.82, 0.54 * (2 ** (zoomLevel + 1.35))))
   const selfMarkerScale = markerScale * 1.08
   const visibleFacilities = visibleFacilityType ? facilityGroups[visibleFacilityType] ?? [] : []
 
@@ -331,9 +371,16 @@ export default function NewExperience({ onBack }) {
     clearTracking()
     setLocationStatus(statusText)
     const trackingMapMode = mapMode
+    const routeToFollow = activeRoutePath.length > 1 ? interpolateRoute(activeRoutePath, trackingMapMode === 'real' ? 8 : 10) : null
+    routeCursor.current = 0
     demoTimer.current = window.setInterval(() => {
       setSeconds(value => value + 1)
       setPath(prev => {
+        if (routeToFollow?.length) {
+          routeCursor.current = Math.min(routeCursor.current + 1, routeToFollow.length - 1)
+          return routeToFollow.slice(0, routeCursor.current + 1)
+        }
+
         const last = prev[prev.length - 1]
         if (trackingMapMode === 'real') {
           const next = [
@@ -363,12 +410,34 @@ export default function NewExperience({ onBack }) {
     setHasRouteDraft(false)
     setShowPublishSheet(false)
     setGuideMode(false)
+    setActiveRoutePath([])
     setVisibleFacilityType(null)
     setActiveSide(null)
     setSeconds(0)
     setPath([mapMode === 'real' ? START_CENTER_REAL : START_CENTER])
     setLocationStatus(mapMode === 'real' ? '现实地图已开启，路线与导航使用真实经纬度演示' : '像素地图已开启，点击 GO 开始记录路线')
   }, [mapMode])
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      const candidates = walkers.filter(walker => visibleWalkerIds.includes(walker.id))
+      if (!candidates.length) return
+      const shouldSpeak = Math.random() > 0.42
+      setWalkerBubbles(Object.fromEntries(walkers.map(walker => [walker.id, ''])))
+      if (!shouldSpeak) return
+      const speaker = candidates[Math.floor(Math.random() * candidates.length)]
+      setWalkerBubbles(prev => ({ ...prev, [speaker.id]: speaker.bubble }))
+      setWalkerHistory(prev => ({
+        ...prev,
+        [speaker.id]: [speaker.bubble, ...(prev[speaker.id] ?? [])].slice(0, 5)
+      }))
+      window.setTimeout(() => {
+        setWalkerBubbles(prev => ({ ...prev, [speaker.id]: '' }))
+      }, 3000)
+    }, 4600)
+
+    return () => window.clearInterval(timer)
+  }, [visibleWalkerIds.join('|')])
 
   const displayTime = useMemo(() => {
     const min = String(Math.floor(seconds / 60)).padStart(2, '0')
@@ -472,6 +541,8 @@ export default function NewExperience({ onBack }) {
       setGuideMode(false)
       setSideNotice(`${action.label} 已显示在地图上`)
     } else if (action.id === 'route') {
+      const target = mapMode === 'real' ? routeGuidePathReal[routeGuidePathReal.length - 1] : routeGuidePath[routeGuidePath.length - 1]
+      setActiveRoutePath(createRoadLikeRoute(currentCenter, target, mapMode === 'real'))
       setGuideMode(true)
       setVisibleFacilityType('water')
       setSideNotice('路线指引已开启')
@@ -489,6 +560,11 @@ export default function NewExperience({ onBack }) {
       setSideNotice('签到完成，骨头币 +10')
     } else if (facilityGroups[activeSide.id]) {
       setGuideMode(true)
+      const firstPlace = facilityGroups[activeSide.id]?.[0]
+      if (firstPlace) {
+        const target = mapMode === 'real' ? firstPlace.realPosition : firstPlace.position
+        setActiveRoutePath(createRoadLikeRoute(currentCenter, target, mapMode === 'real'))
+      }
       setSideNotice(`${activeSide.label} 导航已开启`)
     } else {
       setSideNotice(`${activeSide.label} 已确认`)
@@ -500,7 +576,9 @@ export default function NewExperience({ onBack }) {
   const navigateToFacility = (place) => {
     setGuideMode(true)
     setVisibleFacilityType(place.type)
-    setPath(prev => [...prev, mapMode === 'real' ? place.realPosition : place.position])
+    const target = mapMode === 'real' ? place.realPosition : place.position
+    const route = createRoadLikeRoute(currentCenter, target, mapMode === 'real')
+    setActiveRoutePath(route)
     setSideNotice(`正在导航到 ${place.label}`)
     window.setTimeout(() => setSideNotice(''), 2200)
   }
@@ -545,7 +623,7 @@ export default function NewExperience({ onBack }) {
         <MapZoomTracker onZoom={setZoomLevel} />
         <MapFollower center={currentCenter} />
         <ImageOverlay url={mapAsset('ditu-large.jpg')} bounds={IMAGE_BOUNDS} />
-        {guideMode && <Polyline positions={mapMode === 'real' ? routeGuidePathReal : routeGuidePath} color="#f4a244" weight={7} opacity={0.86} dashArray="14 10" />}
+        {guideMode && <Polyline positions={activeRoutePath.length ? activeRoutePath : routeGuidePath} color="#f4a244" weight={7} opacity={0.86} dashArray="14 10" />}
         <Polyline positions={displayPath} color="#5B4636" weight={6} opacity={0.85} />
         <Marker key={`self-${isWalking ? 'walk' : 'idle'}-${selfMarkerScale.toFixed(2)}`} position={currentCenter} icon={createSelfIcon(selfBubble, isWalking, selfMarkerScale)}>
           <Popup>我的宠物</Popup>
@@ -563,7 +641,13 @@ export default function NewExperience({ onBack }) {
                 }
               }}
             >
-              <Popup>{walker.name} · {walker.pet}</Popup>
+              <Popup>
+                <strong>{walker.name} · {walker.pet}</strong>
+                <br />
+                {(walkerHistory[walker.id]?.length ? walkerHistory[walker.id] : ['还没有新的发言']).map((line, lineIndex) => (
+                  <span key={`${walker.id}-${lineIndex}`}>{line}<br /></span>
+                ))}
+              </Popup>
             </Marker>
           )
         })}
@@ -597,10 +681,10 @@ export default function NewExperience({ onBack }) {
         <MapZoomTracker onZoom={setZoomLevel} />
         <MapFollower center={currentCenter} />
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
           maxZoom={19}
         />
-        {guideMode && <Polyline positions={routeGuidePathReal} color="#f4a244" weight={7} opacity={0.86} dashArray="14 10" />}
+        {guideMode && <Polyline positions={activeRoutePath.length ? activeRoutePath : routeGuidePathReal} color="#f4a244" weight={7} opacity={0.86} dashArray="14 10" />}
         <Polyline positions={displayPath} color="#5B4636" weight={6} opacity={0.85} />
         <Marker key={`self-real-${isWalking ? 'walk' : 'idle'}-${selfMarkerScale.toFixed(2)}`} position={currentCenter} icon={createSelfIcon(selfBubble, isWalking, selfMarkerScale)}>
           <Popup>我的宠物</Popup>
@@ -617,7 +701,15 @@ export default function NewExperience({ onBack }) {
                   setWalkerBubbles(prev => ({ ...prev, [walker.id]: prev[walker.id] ? '' : walker.bubble }))
                 }
               }}
-            />
+            >
+              <Popup>
+                <strong>{walker.name} · {walker.pet}</strong>
+                <br />
+                {(walkerHistory[walker.id]?.length ? walkerHistory[walker.id] : ['还没有新的发言']).map((line, lineIndex) => (
+                  <span key={`real-${walker.id}-${lineIndex}`}>{line}<br /></span>
+                ))}
+              </Popup>
+            </Marker>
           )
         })}
         {visibleFacilities.map((place) => (
@@ -632,6 +724,7 @@ export default function NewExperience({ onBack }) {
       )}
 
       <div className="new-map-overlay" />
+      <div className={`new-cloud-layer ${modeFx}`} />
 
       {activePage === 'go' && <header className="new-top-panel">
         <div className="new-top-actions">
