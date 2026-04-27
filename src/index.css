@@ -2833,6 +2833,18 @@ body {
   filter: saturate(1.08) contrast(1.03) brightness(1.02);
 }
 
+.infinite-map-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  background-repeat: repeat;
+  background-size: 1024px 1024px;
+  image-rendering: auto;
+  filter: saturate(1.08) contrast(1.03) brightness(1.02);
+  will-change: transform, width, height;
+}
+
 .new-experience.is-panel-mode .new-map-overlay {
   opacity: 0.08;
 }
@@ -3427,18 +3439,31 @@ body {
 
 .new-loop-item.go.active .game-icon-img,
 .new-loop-item.go.route-active.active .game-icon-img {
-  top: 9px;
-  width: clamp(31px, 7vw, 42px);
-  height: clamp(31px, 7vw, 42px);
+  top: 50%;
+  width: 82%;
+  height: 82%;
   object-fit: contain;
+  transform: translate(-50%, -50%);
 }
 
 .new-loop-item.go.active b {
-  margin-top: clamp(31px, 7vw, 39px);
+  position: absolute;
+  left: 50%;
+  bottom: 9px;
+  margin-top: 0;
+  transform: translateX(-50%);
+  font-size: clamp(12px, 2.8vw, 15px);
+  line-height: 1;
+  text-shadow: 0 2px 0 #377629;
+}
+
+.new-loop-item.go.active > span {
+  width: 100%;
+  height: 100%;
 }
 
 .new-loop-item.go.active b::after {
-  margin-top: -2px;
+  display: none !important;
 }
 
 /* New-experience v3: sticker icons, free zoom map, and liquid GO controls. */

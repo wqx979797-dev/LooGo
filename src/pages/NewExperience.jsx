@@ -208,27 +208,25 @@ function RepeatingImageLayer({ url }) {
   const map = useMap()
 
   useEffect(() => {
-    const InfiniteImageLayer = L.GridLayer.extend({
-      createTile() {
-        const tile = L.DomUtil.create('img', 'infinite-map-tile')
-        tile.src = url
-        tile.alt = ''
-        tile.draggable = false
-        tile.decoding = 'async'
-        tile.loading = 'eager'
-        return tile
-      }
-    })
+    const layer = L.DomUtil.create('div', 'infinite-map-layer')
+    layer.style.backgroundImage = `url("${url}")`
+    map.getPanes().tilePane.appendChild(layer)
 
-    const layer = new InfiniteImageLayer({
-      tileSize: 1024,
-      keepBuffer: 6,
-      updateWhenIdle: false,
-      updateWhenZooming: false
-    })
+    const bounds = [[-MAP_HEIGHT * 4, -MAP_WIDTH * 4], [MAP_HEIGHT * 5, MAP_WIDTH * 5]]
+    const update = () => {
+      const northWest = map.latLngToLayerPoint(bounds[0])
+      const southEast = map.latLngToLayerPoint(bounds[1])
+      L.DomUtil.setPosition(layer, northWest)
+      layer.style.width = `${Math.max(1, southEast.x - northWest.x)}px`
+      layer.style.height = `${Math.max(1, southEast.y - northWest.y)}px`
+    }
 
-    layer.addTo(map)
-    return () => layer.remove()
+    update()
+    map.on('move zoom viewreset resize', update)
+    return () => {
+      map.off('move zoom viewreset resize', update)
+      layer.remove()
+    }
   }, [map, url])
 
   return null
