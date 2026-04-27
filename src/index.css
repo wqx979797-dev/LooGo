@@ -310,6 +310,164 @@ body {
   }
 }
 
+/* Phone stability pass: no overlap, faster paint, visible fallback while assets stream in. */
+.new-map-overlay {
+  opacity: 0.04 !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(129, 188, 79, 0.05)) !important;
+}
+
+.new-experience::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(162, 217, 101, 0.18), transparent 28%),
+    linear-gradient(180deg, #d9f5bd 0%, #bce784 100%);
+}
+
+.new-experience .leaflet-container {
+  position: relative;
+  z-index: 2;
+  background: #bde783 !important;
+}
+
+.new-cloud-layer {
+  z-index: 800 !important;
+  opacity: 0.18 !important;
+  filter: blur(8px) !important;
+}
+
+.new-loop-nav {
+  height: clamp(142px, 18dvh, 168px) !important;
+  bottom: 0 !important;
+  padding-bottom: env(safe-area-inset-bottom) !important;
+}
+
+.new-loop-nav::before {
+  bottom: -52px !important;
+  height: clamp(152px, 21dvh, 190px) !important;
+  opacity: 0.64 !important;
+}
+
+.new-loop-item {
+  top: clamp(88px, 12.8dvh, 108px) !important;
+}
+
+.new-loop-item.go.active,
+.new-loop-item.go.route-active.active {
+  top: clamp(50px, 7.5dvh, 68px) !important;
+  width: clamp(82px, 18vw, 100px) !important;
+  height: clamp(82px, 18vw, 100px) !important;
+}
+
+.new-message-panel {
+  left: 12px !important;
+  right: 92px !important;
+  bottom: calc(clamp(168px, 22dvh, 196px) + env(safe-area-inset-bottom)) !important;
+  z-index: 1005 !important;
+}
+
+.new-message-panel input {
+  min-height: 42px !important;
+  background: rgba(255, 252, 242, 0.86) !important;
+}
+
+.new-message-panel button {
+  min-height: 42px !important;
+  flex: 0 0 auto;
+}
+
+.locate-button {
+  bottom: calc(clamp(168px, 22dvh, 196px) + env(safe-area-inset-bottom)) !important;
+  right: 12px !important;
+  z-index: 1006 !important;
+}
+
+.go-liquid-actions {
+  top: -46px !important;
+  width: min(62vw, 220px) !important;
+  height: 40px !important;
+}
+
+.go-action {
+  min-width: 76px !important;
+  height: 38px !important;
+  font-size: 13px !important;
+  border-width: 2px !important;
+}
+
+.go-action.finish {
+  min-width: 96px !important;
+}
+
+.new-side-actions {
+  right: 8px !important;
+}
+
+.new-side-actions button {
+  background: rgba(255, 252, 242, 0.82) !important;
+  backdrop-filter: blur(10px);
+}
+
+.new-top-panel,
+.new-side-actions,
+.map-status-card,
+.new-message-panel,
+.new-loop-nav,
+.side-action-panel,
+.new-page-panel,
+.side-notice {
+  transform: translateZ(0);
+}
+
+@media (max-width: 430px) {
+  .new-loop-nav {
+    height: 138px !important;
+  }
+
+  .new-loop-item {
+    top: 92px !important;
+  }
+
+  .new-loop-item.go.active,
+  .new-loop-item.go.route-active.active {
+    top: 50px !important;
+    width: 88px !important;
+    height: 88px !important;
+  }
+
+  .new-loop-item .game-icon-img {
+    width: 46px !important;
+    height: 46px !important;
+  }
+
+  .new-message-panel {
+    bottom: calc(166px + env(safe-area-inset-bottom)) !important;
+    right: 82px !important;
+  }
+
+  .locate-button {
+    bottom: calc(166px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .go-liquid-actions {
+    top: -43px !important;
+    width: 194px !important;
+  }
+
+  .go-action {
+    min-width: 70px !important;
+    height: 36px !important;
+    font-size: 12px !important;
+  }
+
+  .go-action.finish {
+    min-width: 92px !important;
+  }
+}
+
 @keyframes gentlePop {
   from {
     opacity: 0;

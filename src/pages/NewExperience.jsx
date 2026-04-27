@@ -635,7 +635,7 @@ export default function NewExperience({ onBack }) {
         <MapResizer />
         <MapZoomTracker onZoom={setZoomLevel} />
         <MapFollower center={currentCenter} />
-        <ImageOverlay url={mapAsset('ditu-large.jpg')} bounds={IMAGE_BOUNDS} />
+        <ImageOverlay url={mapAsset('ditu-mobile.jpg')} bounds={IMAGE_BOUNDS} />
         {guideMode && <Polyline positions={activeRoutePath.length ? activeRoutePath : routeGuidePath} color="#f4a244" weight={7} opacity={0.86} dashArray="14 10" />}
         <Polyline positions={displayPath} color="#5B4636" weight={6} opacity={0.85} />
         <Marker key={`self-${isWalking ? 'walk' : 'idle'}-${selfMarkerScale.toFixed(2)}`} position={currentCenter} icon={createSelfIcon(selfBubble, isWalking, selfMarkerScale)}>
