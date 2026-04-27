@@ -2822,6 +2822,17 @@ body {
   filter: saturate(1.08) contrast(1.03) brightness(1.02);
 }
 
+.infinite-map-tile {
+  width: 1024px;
+  height: 1024px;
+  display: block;
+  object-fit: cover;
+  user-select: none;
+  -webkit-user-drag: none;
+  image-rendering: auto;
+  filter: saturate(1.08) contrast(1.03) brightness(1.02);
+}
+
 .new-experience.is-panel-mode .new-map-overlay {
   opacity: 0.08;
 }

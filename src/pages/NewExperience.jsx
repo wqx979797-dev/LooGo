@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ImageOverlay, MapContainer, Marker, Polyline, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet'
+import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 
 const modeMeta = {
@@ -200,6 +200,36 @@ function MapZoomTracker({ onZoom }) {
   useEffect(() => {
     onZoom(map.getZoom())
   }, [map, onZoom])
+
+  return null
+}
+
+function RepeatingImageLayer({ url }) {
+  const map = useMap()
+
+  useEffect(() => {
+    const InfiniteImageLayer = L.GridLayer.extend({
+      createTile() {
+        const tile = L.DomUtil.create('img', 'infinite-map-tile')
+        tile.src = url
+        tile.alt = ''
+        tile.draggable = false
+        tile.decoding = 'async'
+        tile.loading = 'eager'
+        return tile
+      }
+    })
+
+    const layer = new InfiniteImageLayer({
+      tileSize: 1024,
+      keepBuffer: 6,
+      updateWhenIdle: false,
+      updateWhenZooming: false
+    })
+
+    layer.addTo(map)
+    return () => layer.remove()
+  }, [map, url])
 
   return null
 }
@@ -544,7 +574,7 @@ export default function NewExperience({ onBack }) {
         <MapResizer />
         <MapZoomTracker onZoom={setZoomLevel} />
         <MapFollower center={currentCenter} />
-        <ImageOverlay url={mapAsset('zz.png')} bounds={IMAGE_BOUNDS} />
+        <RepeatingImageLayer url={mapAsset('ditu-tile.jpg')} />
         {guideMode && <Polyline positions={mapMode === 'real' ? routeGuidePathReal : routeGuidePath} color="#f4a244" weight={7} opacity={0.86} dashArray="14 10" />}
         <Polyline positions={displayPath} color="#5B4636" weight={6} opacity={0.85} />
         <Marker key={`self-${isWalking ? 'walk' : 'idle'}-${selfMarkerScale.toFixed(2)}`} position={currentCenter} icon={createSelfIcon(selfBubble, isWalking, selfMarkerScale)}>
