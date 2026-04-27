@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet'
+import { ImageOverlay, MapContainer, Marker, Polyline, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 
 const modeMeta = {
@@ -28,8 +28,8 @@ const navItems = [
   { id: 'mine', label: '我的', icon: 'reward' }
 ]
 
-const MAP_WIDTH = 4000
-const MAP_HEIGHT = 2988
+const MAP_WIDTH = 8192
+const MAP_HEIGHT = 8192
 const IMAGE_BOUNDS = [[0, 0], [MAP_HEIGHT, MAP_WIDTH]]
 const PIXEL_INITIAL_ZOOM = -1.42
 const PIXEL_MIN_ZOOM = -1.68
@@ -39,18 +39,18 @@ const START_CENTER_REAL = [39.92915, 116.60963]
 const toImagePoint = (xPercent, yPercent) => [MAP_HEIGHT * yPercent, MAP_WIDTH * xPercent]
 
 const walkers = [
-  { id: 'p1', name: 'Momo', pet: '橘猫', asset: '1_marker_90f.gif', position: toImagePoint(0.30, 0.35), realPosition: [39.93125, 116.6072], bubble: '慢走中～' },
-  { id: 'p2', name: 'Seven', pet: '橘猫', asset: '2_marker_90f.gif', position: toImagePoint(0.72, 0.34), realPosition: [39.93105, 116.61245], bubble: '求搭子!' },
-  { id: 'p3', name: 'Luna', pet: '柯基', asset: '3_marker_90f.gif', position: toImagePoint(0.24, 0.55), realPosition: [39.9292, 116.6063], bubble: '草坪见' },
-  { id: 'p4', name: '奶盖', pet: '萨摩耶', asset: '4_marker_90f.gif', position: toImagePoint(0.78, 0.55), realPosition: [39.92905, 116.61305], bubble: '代遛结束' },
-  { id: 'p5', name: '阿布', pet: '柯基', asset: '6_marker_90f.gif', position: toImagePoint(0.38, 0.70), realPosition: [39.92745, 116.60825], bubble: '休息中' },
-  { id: 'p6', name: '栗子', pet: '柴犬', asset: '1_marker_90f.gif', position: toImagePoint(0.66, 0.70), realPosition: [39.92735, 116.61138], bubble: '补水啦' },
-  { id: 'p7', name: '花花', pet: '猫咪', asset: '2_marker_90f.gif', position: toImagePoint(0.47, 0.28), realPosition: [39.93205, 116.60922], bubble: '晒太阳' },
-  { id: 'p8', name: '团子', pet: '柯基', asset: '3_marker_90f.gif', position: toImagePoint(0.58, 0.43), realPosition: [39.93022, 116.61042], bubble: '等搭子' },
-  { id: 'p9', name: '豆包', pet: '柴犬', asset: '4_marker_90f.gif', position: toImagePoint(0.16, 0.74), realPosition: [39.92695, 116.60552], bubble: '路线不错' },
-  { id: 'p10', name: '小八', pet: '柯基', asset: '6_marker_90f.gif', position: toImagePoint(0.86, 0.72), realPosition: [39.92705, 116.61412], bubble: '慢跑中' },
-  { id: 'p11', name: '乌龙', pet: '柴犬', asset: '1_marker_90f.gif', position: toImagePoint(0.18, 0.27), realPosition: [39.9321, 116.6059], bubble: '已签到' },
-  { id: 'p12', name: '可乐', pet: '猫咪', asset: '2_marker_90f.gif', position: toImagePoint(0.83, 0.28), realPosition: [39.932, 116.61372], bubble: '回家啦' }
+  { id: 'p1', name: 'Momo', pet: '橘猫', asset: '1_marker_90f.gif', position: toImagePoint(0.30, 0.35), realPosition: [39.93015, 116.60905], bubble: '慢走中～' },
+  { id: 'p2', name: 'Seven', pet: '橘猫', asset: '2_marker_90f.gif', position: toImagePoint(0.72, 0.34), realPosition: [39.927, 116.6158], bubble: '求搭子!' },
+  { id: 'p3', name: 'Luna', pet: '柯基', asset: '3_marker_90f.gif', position: toImagePoint(0.24, 0.55), realPosition: [39.9342, 116.6039], bubble: '草坪见' },
+  { id: 'p4', name: '奶盖', pet: '萨摩耶', asset: '4_marker_90f.gif', position: toImagePoint(0.78, 0.55), realPosition: [39.9244, 116.6173], bubble: '代遛结束' },
+  { id: 'p5', name: '阿布', pet: '柯基', asset: '6_marker_90f.gif', position: toImagePoint(0.38, 0.70), realPosition: [39.92905, 116.61015], bubble: '休息中' },
+  { id: 'p6', name: '栗子', pet: '柴犬', asset: '1_marker_90f.gif', position: toImagePoint(0.66, 0.70), realPosition: [39.9227, 116.6079], bubble: '补水啦' },
+  { id: 'p7', name: '花花', pet: '猫咪', asset: '2_marker_90f.gif', position: toImagePoint(0.47, 0.28), realPosition: [39.9368, 116.6142], bubble: '晒太阳' },
+  { id: 'p8', name: '团子', pet: '柯基', asset: '3_marker_90f.gif', position: toImagePoint(0.58, 0.43), realPosition: [39.9325, 116.6206], bubble: '等搭子' },
+  { id: 'p9', name: '豆包', pet: '柴犬', asset: '4_marker_90f.gif', position: toImagePoint(0.16, 0.74), realPosition: [39.9206, 116.5998], bubble: '路线不错' },
+  { id: 'p10', name: '小八', pet: '柯基', asset: '6_marker_90f.gif', position: toImagePoint(0.86, 0.72), realPosition: [39.9382, 116.5986], bubble: '慢跑中' },
+  { id: 'p11', name: '乌龙', pet: '柴犬', asset: '1_marker_90f.gif', position: toImagePoint(0.18, 0.27), realPosition: [39.9165, 116.6216], bubble: '已签到' },
+  { id: 'p12', name: '可乐', pet: '猫咪', asset: '2_marker_90f.gif', position: toImagePoint(0.83, 0.28), realPosition: [39.9412, 116.6268], bubble: '回家啦' }
 ]
 
 const START_CENTER = toImagePoint(0.52, 0.56)
@@ -200,34 +200,6 @@ function MapZoomTracker({ onZoom }) {
   useEffect(() => {
     onZoom(map.getZoom())
   }, [map, onZoom])
-
-  return null
-}
-
-function RepeatingImageLayer({ url }) {
-  const map = useMap()
-
-  useEffect(() => {
-    const layer = L.DomUtil.create('div', 'infinite-map-layer')
-    layer.style.backgroundImage = `url("${url}")`
-    map.getPanes().tilePane.appendChild(layer)
-
-    const bounds = [[-MAP_HEIGHT * 4, -MAP_WIDTH * 4], [MAP_HEIGHT * 5, MAP_WIDTH * 5]]
-    const update = () => {
-      const northWest = map.latLngToLayerPoint(bounds[0])
-      const southEast = map.latLngToLayerPoint(bounds[1])
-      L.DomUtil.setPosition(layer, northWest)
-      layer.style.width = `${Math.max(1, southEast.x - northWest.x)}px`
-      layer.style.height = `${Math.max(1, southEast.y - northWest.y)}px`
-    }
-
-    update()
-    map.on('move zoom viewreset resize', update)
-    return () => {
-      map.off('move zoom viewreset resize', update)
-      layer.remove()
-    }
-  }, [map, url])
 
   return null
 }
@@ -572,7 +544,7 @@ export default function NewExperience({ onBack }) {
         <MapResizer />
         <MapZoomTracker onZoom={setZoomLevel} />
         <MapFollower center={currentCenter} />
-        <RepeatingImageLayer url={mapAsset('ditu-tile.jpg')} />
+        <ImageOverlay url={mapAsset('ditu-large.jpg')} bounds={IMAGE_BOUNDS} />
         {guideMode && <Polyline positions={mapMode === 'real' ? routeGuidePathReal : routeGuidePath} color="#f4a244" weight={7} opacity={0.86} dashArray="14 10" />}
         <Polyline positions={displayPath} color="#5B4636" weight={6} opacity={0.85} />
         <Marker key={`self-${isWalking ? 'walk' : 'idle'}-${selfMarkerScale.toFixed(2)}`} position={currentCenter} icon={createSelfIcon(selfBubble, isWalking, selfMarkerScale)}>
