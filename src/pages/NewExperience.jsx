@@ -181,10 +181,7 @@ function MapFollower({ center }) {
   const map = useMap()
 
   useEffect(() => {
-    map.flyTo(center, map.getZoom(), {
-      animate: true,
-      duration: 0.55
-    })
+    map.setView(center, map.getZoom(), { animate: false })
   }, [center, map])
 
   return null
@@ -240,7 +237,7 @@ const pixelIcon = (type) => `<img class="game-icon game-icon-img ${type}" src="$
 const createPixelIcon = (walker, hidden = false, bubble = '', markerScale = 1) => L.divIcon({
   className: `new-pixel-marker ${hidden ? 'is-hidden' : 'is-visible'}`,
   html: `
-    <span class="marker-scale" style="--marker-scale:${markerScale}">
+    <span class="marker-scale ${hidden ? 'is-hidden-scale' : 'is-visible-scale'}" style="--marker-scale:${markerScale}">
       <span class="new-pixel-bubble ${bubble ? 'show' : ''}">${bubble}</span>
       <img class="new-character-sprite" src="${characterAsset(walker.asset)}" alt="${walker.name}" />
       <span class="new-pixel-name">${walker.name}</span>
@@ -254,7 +251,7 @@ const createPixelIcon = (walker, hidden = false, bubble = '', markerScale = 1) =
 const createSelfIcon = (bubble = '', isWalking = false, markerScale = 1) => L.divIcon({
   className: `new-pixel-marker self ${isWalking ? 'is-walking' : ''}`,
   html: `
-    <span class="marker-scale" style="--marker-scale:${markerScale}">
+    <span class="marker-scale is-visible-scale" style="--marker-scale:${markerScale}">
       <span class="new-walk-aura"></span>
       <span class="new-pixel-bubble ${bubble ? 'show' : ''}">${bubble}</span>
       <img class="new-character-sprite self" src="${characterAsset(isWalking ? '5.1_marker_90f.gif' : '5_marker_90f.gif')}" alt="我" />
@@ -448,10 +445,12 @@ export default function NewExperience({ onBack }) {
   }
 
   const handleNavClick = (index) => {
+    const wasActive = activeNav === index
     setActiveNav(index)
     setPanelExpanded(false)
     setActivePanelDetail(null)
     if (navItems[index].id === 'go') {
+      if (!wasActive) return
       if (isWalking) {
         pauseWalk()
       } else if (hasRouteDraft) {
@@ -524,13 +523,14 @@ export default function NewExperience({ onBack }) {
 
   return (
     <div className={`new-experience ${activePage !== 'go' ? 'is-panel-mode' : ''}`}>
+      {mapMode === 'pixel' ? (
       <MapContainer
-        key={mapMode}
-        crs={mapMode === 'pixel' ? L.CRS.Simple : undefined}
-        center={mapMode === 'pixel' ? START_CENTER : START_CENTER_REAL}
-        zoom={mapMode === 'pixel' ? PIXEL_INITIAL_ZOOM : REAL_INITIAL_ZOOM}
-        minZoom={mapMode === 'pixel' ? PIXEL_MIN_ZOOM : 12}
-        maxZoom={mapMode === 'pixel' ? 6 : 19}
+        key="pixel-map"
+        crs={L.CRS.Simple}
+        center={START_CENTER}
+        zoom={PIXEL_INITIAL_ZOOM}
+        minZoom={PIXEL_MIN_ZOOM}
+        maxZoom={6}
         zoomSnap={0.25}
         zoomDelta={0.5}
         zoomControl
@@ -544,14 +544,7 @@ export default function NewExperience({ onBack }) {
         <MapResizer />
         <MapZoomTracker onZoom={setZoomLevel} />
         <MapFollower center={currentCenter} />
-        {mapMode === 'pixel' ? (
-          <ImageOverlay url={mapAsset('zz.png')} bounds={IMAGE_BOUNDS} />
-        ) : (
-          <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
-            maxZoom={19}
-          />
-        )}
+        <ImageOverlay url={mapAsset('zz.png')} bounds={IMAGE_BOUNDS} />
         {guideMode && <Polyline positions={mapMode === 'real' ? routeGuidePathReal : routeGuidePath} color="#f4a244" weight={7} opacity={0.86} dashArray="14 10" />}
         <Polyline positions={displayPath} color="#5B4636" weight={6} opacity={0.85} />
         <Marker key={`self-${isWalking ? 'walk' : 'idle'}-${selfMarkerScale.toFixed(2)}`} position={currentCenter} icon={createSelfIcon(selfBubble, isWalking, selfMarkerScale)}>
@@ -583,6 +576,60 @@ export default function NewExperience({ onBack }) {
           />
         ))}
       </MapContainer>
+      ) : (
+      <MapContainer
+        key="real-map"
+        center={START_CENTER_REAL}
+        zoom={REAL_INITIAL_ZOOM}
+        minZoom={12}
+        maxZoom={19}
+        zoomSnap={0.25}
+        zoomDelta={0.5}
+        zoomControl
+        zoomAnimation={false}
+        fadeAnimation={false}
+        style={{ height: '100dvh', minHeight: '100vh', width: '100%' }}
+        scrollWheelZoom
+        doubleClickZoom
+        attributionControl={false}
+      >
+        <MapResizer />
+        <MapZoomTracker onZoom={setZoomLevel} />
+        <MapFollower center={currentCenter} />
+        <TileLayer
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
+          maxZoom={19}
+        />
+        {guideMode && <Polyline positions={routeGuidePathReal} color="#f4a244" weight={7} opacity={0.86} dashArray="14 10" />}
+        <Polyline positions={displayPath} color="#5B4636" weight={6} opacity={0.85} />
+        <Marker key={`self-real-${isWalking ? 'walk' : 'idle'}-${selfMarkerScale.toFixed(2)}`} position={currentCenter} icon={createSelfIcon(selfBubble, isWalking, selfMarkerScale)}>
+          <Popup>我的宠物</Popup>
+        </Marker>
+        {walkers.map((walker) => {
+          const visible = visibleWalkerIds.includes(walker.id)
+          return (
+            <Marker
+              key={`real-${walker.id}-${mode}-${visible}`}
+              position={walker.realPosition}
+              icon={createPixelIcon(walker, !visible, visible ? walkerBubbles[walker.id] : '', markerScale)}
+              eventHandlers={{
+                click: () => {
+                  setWalkerBubbles(prev => ({ ...prev, [walker.id]: prev[walker.id] ? '' : walker.bubble }))
+                }
+              }}
+            />
+          )
+        })}
+        {visibleFacilities.map((place) => (
+          <Marker
+            key={`real-${place.id}`}
+            position={place.realPosition}
+            icon={createFacilityIcon(place, markerScale)}
+            eventHandlers={{ click: () => navigateToFacility(place) }}
+          />
+        ))}
+      </MapContainer>
+      )}
 
       <div className="new-map-overlay" />
 

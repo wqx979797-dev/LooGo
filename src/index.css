@@ -3367,6 +3367,69 @@ body {
   }
 }
 
+/* Critical Leaflet fix: never animate/transform the marker root, or Leaflet loses marker coordinates. */
+.new-pixel-marker,
+.new-pixel-marker.is-visible,
+.new-pixel-marker.is-hidden,
+.facility-marker {
+  animation: none !important;
+  transition: opacity 180ms ease, filter 180ms ease;
+}
+
+.new-pixel-marker.is-hidden {
+  opacity: 0;
+  filter: blur(2px);
+}
+
+.new-pixel-marker.is-visible {
+  opacity: 1;
+  filter: none;
+}
+
+.marker-scale {
+  transform: scale(var(--marker-scale, 1));
+  transform-origin: center bottom;
+}
+
+.marker-scale.is-visible-scale {
+  animation: markerInnerPop 260ms cubic-bezier(.22, 1.25, .28, 1) both;
+}
+
+.marker-scale.is-hidden-scale {
+  transform: scale(calc(var(--marker-scale, 1) * 0.45));
+}
+
+@keyframes markerInnerPop {
+  from {
+    transform: scale(calc(var(--marker-scale, 1) * 0.86));
+  }
+
+  to {
+    transform: scale(var(--marker-scale, 1));
+  }
+}
+
+.new-loop-item,
+.new-loop-item span {
+  overflow: visible;
+}
+
+.new-loop-item.go.active .game-icon-img,
+.new-loop-item.go.route-active.active .game-icon-img {
+  top: 9px;
+  width: clamp(31px, 7vw, 42px);
+  height: clamp(31px, 7vw, 42px);
+  object-fit: contain;
+}
+
+.new-loop-item.go.active b {
+  margin-top: clamp(31px, 7vw, 39px);
+}
+
+.new-loop-item.go.active b::after {
+  margin-top: -2px;
+}
+
 /* New-experience v3: sticker icons, free zoom map, and liquid GO controls. */
 img.game-icon-img,
 .new-loop-item .game-icon-img,
