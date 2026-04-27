@@ -39,18 +39,18 @@ const START_CENTER_REAL = [39.92915, 116.60963]
 const toImagePoint = (xPercent, yPercent) => [MAP_HEIGHT * yPercent, MAP_WIDTH * xPercent]
 
 const walkers = [
-  { id: 'p1', name: 'Momo', pet: '橘猫', asset: '1_marker_90f.gif', position: toImagePoint(0.42, 0.48), realPosition: [39.92982, 116.60872], bubble: '慢走中～' },
-  { id: 'p2', name: 'Seven', pet: '橘猫', asset: '2_marker_90f.gif', position: toImagePoint(0.59, 0.49), realPosition: [39.92946, 116.61042], bubble: '求搭子!' },
-  { id: 'p3', name: 'Luna', pet: '柯基', asset: '3_marker_90f.gif', position: toImagePoint(0.48, 0.39), realPosition: [39.93022, 116.60942], bubble: '草坪见' },
-  { id: 'p4', name: '奶盖', pet: '萨摩耶', asset: '4_marker_90f.gif', position: toImagePoint(0.62, 0.61), realPosition: [39.92864, 116.61086], bubble: '代遛结束' },
-  { id: 'p5', name: '阿布', pet: '柯基', asset: '6_marker_90f.gif', position: toImagePoint(0.36, 0.59), realPosition: [39.92888, 116.60796], bubble: '休息中' },
-  { id: 'p6', name: '栗子', pet: '柴犬', asset: '1_marker_90f.gif', position: toImagePoint(0.70, 0.44), realPosition: [39.92992, 116.61172], bubble: '补水啦' },
-  { id: 'p7', name: '花花', pet: '猫咪', asset: '2_marker_90f.gif', position: toImagePoint(0.30, 0.44), realPosition: [39.93004, 116.60718], bubble: '晒太阳' },
-  { id: 'p8', name: '团子', pet: '柯基', asset: '3_marker_90f.gif', position: toImagePoint(0.53, 0.68), realPosition: [39.92792, 116.60968], bubble: '等搭子' },
-  { id: 'p9', name: '豆包', pet: '柴犬', asset: '4_marker_90f.gif', position: toImagePoint(0.78, 0.58), realPosition: [39.9289, 116.61212], bubble: '路线不错' },
-  { id: 'p10', name: '小八', pet: '柯基', asset: '6_marker_90f.gif', position: toImagePoint(0.24, 0.52), realPosition: [39.92924, 116.6067], bubble: '慢跑中' },
-  { id: 'p11', name: '乌龙', pet: '柴犬', asset: '1_marker_90f.gif', position: toImagePoint(0.64, 0.31), realPosition: [39.9311, 116.61078], bubble: '已签到' },
-  { id: 'p12', name: '可乐', pet: '猫咪', asset: '2_marker_90f.gif', position: toImagePoint(0.39, 0.72), realPosition: [39.92756, 116.60852], bubble: '回家啦' }
+  { id: 'p1', name: 'Momo', pet: '橘猫', asset: '1_marker_90f.gif', position: toImagePoint(0.30, 0.35), realPosition: [39.93125, 116.6072], bubble: '慢走中～' },
+  { id: 'p2', name: 'Seven', pet: '橘猫', asset: '2_marker_90f.gif', position: toImagePoint(0.72, 0.34), realPosition: [39.93105, 116.61245], bubble: '求搭子!' },
+  { id: 'p3', name: 'Luna', pet: '柯基', asset: '3_marker_90f.gif', position: toImagePoint(0.24, 0.55), realPosition: [39.9292, 116.6063], bubble: '草坪见' },
+  { id: 'p4', name: '奶盖', pet: '萨摩耶', asset: '4_marker_90f.gif', position: toImagePoint(0.78, 0.55), realPosition: [39.92905, 116.61305], bubble: '代遛结束' },
+  { id: 'p5', name: '阿布', pet: '柯基', asset: '6_marker_90f.gif', position: toImagePoint(0.38, 0.70), realPosition: [39.92745, 116.60825], bubble: '休息中' },
+  { id: 'p6', name: '栗子', pet: '柴犬', asset: '1_marker_90f.gif', position: toImagePoint(0.66, 0.70), realPosition: [39.92735, 116.61138], bubble: '补水啦' },
+  { id: 'p7', name: '花花', pet: '猫咪', asset: '2_marker_90f.gif', position: toImagePoint(0.47, 0.28), realPosition: [39.93205, 116.60922], bubble: '晒太阳' },
+  { id: 'p8', name: '团子', pet: '柯基', asset: '3_marker_90f.gif', position: toImagePoint(0.58, 0.43), realPosition: [39.93022, 116.61042], bubble: '等搭子' },
+  { id: 'p9', name: '豆包', pet: '柴犬', asset: '4_marker_90f.gif', position: toImagePoint(0.16, 0.74), realPosition: [39.92695, 116.60552], bubble: '路线不错' },
+  { id: 'p10', name: '小八', pet: '柯基', asset: '6_marker_90f.gif', position: toImagePoint(0.86, 0.72), realPosition: [39.92705, 116.61412], bubble: '慢跑中' },
+  { id: 'p11', name: '乌龙', pet: '柴犬', asset: '1_marker_90f.gif', position: toImagePoint(0.18, 0.27), realPosition: [39.9321, 116.6059], bubble: '已签到' },
+  { id: 'p12', name: '可乐', pet: '猫咪', asset: '2_marker_90f.gif', position: toImagePoint(0.83, 0.28), realPosition: [39.932, 116.61372], bubble: '回家啦' }
 ]
 
 const START_CENTER = toImagePoint(0.52, 0.56)
@@ -297,7 +297,7 @@ export default function NewExperience({ onBack }) {
   const [path, setPath] = useState([START_CENTER])
   const [message, setMessage] = useState('')
   const [selfBubble, setSelfBubble] = useState('')
-  const [walkerBubbles, setWalkerBubbles] = useState(() => Object.fromEntries(walkers.map(w => [w.id, w.bubble])))
+  const [walkerBubbles, setWalkerBubbles] = useState(() => Object.fromEntries(walkers.map(w => [w.id, ''])))
   const [sideNotice, setSideNotice] = useState('')
   const [activeSide, setActiveSide] = useState(null)
   const [locationStatus, setLocationStatus] = useState('点击 GO 后开始获取定位')
@@ -306,12 +306,18 @@ export default function NewExperience({ onBack }) {
   const demoTimer = useRef(null)
 
   const visibleWalkerIds = modeMeta[mode].visible
-  const currentCenter = path[path.length - 1]
+  const isRealPoint = (point) => Array.isArray(point) && Math.abs(point[0]) <= 90 && Math.abs(point[1]) <= 180
+  const rawCenter = path[path.length - 1]
+  const currentCenter = mapMode === 'real'
+    ? (isRealPoint(rawCenter) ? rawCenter : START_CENTER_REAL)
+    : (isRealPoint(rawCenter) ? START_CENTER : rawCenter)
+  const displayPath = mapMode === 'real' ? path.filter(isRealPoint) : path.filter(point => !isRealPoint(point))
   const activePage = navItems[activeNav].id
   const routeDistance = Math.max((path.length - 1) * 0.02, 0).toFixed(2)
   const markerScale = mapMode === 'real'
-    ? Math.max(0.95, Math.min(1.42, zoomLevel / 15))
-    : Math.max(0.92, Math.min(1.76, 1.04 * (2 ** (zoomLevel + 1.45))))
+    ? Math.max(0.72, Math.min(1.02, zoomLevel / 18))
+    : Math.max(0.56, Math.min(1.05, 0.68 * (2 ** (zoomLevel + 1.45))))
+  const selfMarkerScale = markerScale * 1.08
   const visibleFacilities = visibleFacilityType ? facilityGroups[visibleFacilityType] ?? [] : []
 
   const clearTracking = () => {
@@ -457,6 +463,10 @@ export default function NewExperience({ onBack }) {
   }
 
   const handleSideAction = (action) => {
+    if (activeSide?.id === action.id) {
+      setActiveSide(null)
+      return
+    }
     setActiveSide(action)
     if (facilityGroups[action.id]) {
       setVisibleFacilityType(action.id)
@@ -485,6 +495,14 @@ export default function NewExperience({ onBack }) {
       setSideNotice(`${activeSide.label} 已确认`)
     }
     setActiveSide(null)
+    window.setTimeout(() => setSideNotice(''), 2200)
+  }
+
+  const navigateToFacility = (place) => {
+    setGuideMode(true)
+    setVisibleFacilityType(place.type)
+    setPath(prev => [...prev, mapMode === 'real' ? place.realPosition : place.position])
+    setSideNotice(`正在导航到 ${place.label}`)
     window.setTimeout(() => setSideNotice(''), 2200)
   }
 
@@ -535,8 +553,8 @@ export default function NewExperience({ onBack }) {
           />
         )}
         {guideMode && <Polyline positions={mapMode === 'real' ? routeGuidePathReal : routeGuidePath} color="#f4a244" weight={7} opacity={0.86} dashArray="14 10" />}
-        <Polyline positions={path} color="#5B4636" weight={6} opacity={0.85} />
-        <Marker key={`self-${isWalking ? 'walk' : 'idle'}-${markerScale.toFixed(2)}`} position={currentCenter} icon={createSelfIcon(selfBubble, isWalking, markerScale)}>
+        <Polyline positions={displayPath} color="#5B4636" weight={6} opacity={0.85} />
+        <Marker key={`self-${isWalking ? 'walk' : 'idle'}-${selfMarkerScale.toFixed(2)}`} position={currentCenter} icon={createSelfIcon(selfBubble, isWalking, selfMarkerScale)}>
           <Popup>我的宠物</Popup>
         </Marker>
         {walkers.map((walker) => {
@@ -546,6 +564,11 @@ export default function NewExperience({ onBack }) {
               key={`${walker.id}-${mode}-${visible}`}
               position={mapMode === 'real' ? walker.realPosition : walker.position}
               icon={createPixelIcon(walker, !visible, visible ? walkerBubbles[walker.id] : '', markerScale)}
+              eventHandlers={{
+                click: () => {
+                  setWalkerBubbles(prev => ({ ...prev, [walker.id]: prev[walker.id] ? '' : walker.bubble }))
+                }
+              }}
             >
               <Popup>{walker.name} · {walker.pet}</Popup>
             </Marker>
@@ -556,9 +579,8 @@ export default function NewExperience({ onBack }) {
             key={place.id}
             position={mapMode === 'real' ? place.realPosition : place.position}
             icon={createFacilityIcon(place, markerScale)}
-          >
-            <Popup>{place.label}</Popup>
-          </Marker>
+            eventHandlers={{ click: () => navigateToFacility(place) }}
+          />
         ))}
       </MapContainer>
 
