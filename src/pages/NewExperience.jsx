@@ -39,18 +39,18 @@ const START_CENTER_REAL = [39.92915, 116.60963]
 const toImagePoint = (xPercent, yPercent) => [MAP_HEIGHT * yPercent, MAP_WIDTH * xPercent]
 
 const walkers = [
-  { id: 'p1', name: 'Momo', pet: '橘猫', asset: '1_marker_90f.gif', position: toImagePoint(0.30, 0.35), realPosition: [39.93015, 116.60905], bubble: '慢走中～' },
-  { id: 'p2', name: 'Seven', pet: '橘猫', asset: '2_marker_90f.gif', position: toImagePoint(0.72, 0.34), realPosition: [39.927, 116.6158], bubble: '求搭子!' },
-  { id: 'p3', name: 'Luna', pet: '柯基', asset: '3_marker_90f.gif', position: toImagePoint(0.24, 0.55), realPosition: [39.9342, 116.6039], bubble: '草坪见' },
-  { id: 'p4', name: '奶盖', pet: '萨摩耶', asset: '4_marker_90f.gif', position: toImagePoint(0.78, 0.55), realPosition: [39.9244, 116.6173], bubble: '代遛结束' },
-  { id: 'p5', name: '阿布', pet: '柯基', asset: '6_marker_90f.gif', position: toImagePoint(0.38, 0.70), realPosition: [39.92905, 116.61015], bubble: '休息中' },
-  { id: 'p6', name: '栗子', pet: '柴犬', asset: '1_marker_90f.gif', position: toImagePoint(0.66, 0.70), realPosition: [39.9227, 116.6079], bubble: '补水啦' },
-  { id: 'p7', name: '花花', pet: '猫咪', asset: '2_marker_90f.gif', position: toImagePoint(0.47, 0.28), realPosition: [39.9368, 116.6142], bubble: '晒太阳' },
-  { id: 'p8', name: '团子', pet: '柯基', asset: '3_marker_90f.gif', position: toImagePoint(0.58, 0.43), realPosition: [39.9325, 116.6206], bubble: '等搭子' },
-  { id: 'p9', name: '豆包', pet: '柴犬', asset: '4_marker_90f.gif', position: toImagePoint(0.16, 0.74), realPosition: [39.9206, 116.5998], bubble: '路线不错' },
-  { id: 'p10', name: '小八', pet: '柯基', asset: '6_marker_90f.gif', position: toImagePoint(0.86, 0.72), realPosition: [39.9382, 116.5986], bubble: '慢跑中' },
-  { id: 'p11', name: '乌龙', pet: '柴犬', asset: '1_marker_90f.gif', position: toImagePoint(0.18, 0.27), realPosition: [39.9165, 116.6216], bubble: '已签到' },
-  { id: 'p12', name: '可乐', pet: '猫咪', asset: '2_marker_90f.gif', position: toImagePoint(0.83, 0.28), realPosition: [39.9412, 116.6268], bubble: '回家啦' }
+  { id: 'p1', name: 'Momo', pet: '橘猫', asset: '1_marker_90f.gif', position: toImagePoint(0.30, 0.35), realPosition: [39.9366, 116.5968], bubble: '慢走中～' },
+  { id: 'p2', name: 'Seven', pet: '橘猫', asset: '2_marker_90f.gif', position: toImagePoint(0.72, 0.34), realPosition: [39.9184, 116.6306], bubble: '求搭子!' },
+  { id: 'p3', name: 'Luna', pet: '柯基', asset: '3_marker_90f.gif', position: toImagePoint(0.24, 0.55), realPosition: [39.9468, 116.5862], bubble: '草坪见' },
+  { id: 'p4', name: '奶盖', pet: '萨摩耶', asset: '4_marker_90f.gif', position: toImagePoint(0.78, 0.55), realPosition: [39.9105, 116.6395], bubble: '代遛结束' },
+  { id: 'p5', name: '阿布', pet: '柯基', asset: '6_marker_90f.gif', position: toImagePoint(0.38, 0.70), realPosition: [39.9238, 116.6055], bubble: '休息中' },
+  { id: 'p6', name: '栗子', pet: '柴犬', asset: '1_marker_90f.gif', position: toImagePoint(0.66, 0.70), realPosition: [39.9028, 116.6122], bubble: '补水啦' },
+  { id: 'p7', name: '花花', pet: '猫咪', asset: '2_marker_90f.gif', position: toImagePoint(0.47, 0.28), realPosition: [39.9554, 116.6224], bubble: '晒太阳' },
+  { id: 'p8', name: '团子', pet: '柯基', asset: '3_marker_90f.gif', position: toImagePoint(0.58, 0.43), realPosition: [39.9392, 116.6478], bubble: '等搭子' },
+  { id: 'p9', name: '豆包', pet: '柴犬', asset: '4_marker_90f.gif', position: toImagePoint(0.16, 0.74), realPosition: [39.8952, 116.5778], bubble: '路线不错' },
+  { id: 'p10', name: '小八', pet: '柯基', asset: '6_marker_90f.gif', position: toImagePoint(0.86, 0.72), realPosition: [39.963, 116.584], bubble: '慢跑中' },
+  { id: 'p11', name: '乌龙', pet: '柴犬', asset: '1_marker_90f.gif', position: toImagePoint(0.18, 0.27), realPosition: [39.8855, 116.6542], bubble: '已签到' },
+  { id: 'p12', name: '可乐', pet: '猫咪', asset: '2_marker_90f.gif', position: toImagePoint(0.83, 0.28), realPosition: [39.9712, 116.6658], bubble: '回家啦' }
 ]
 
 const START_CENTER = toImagePoint(0.51, 0.37)
@@ -161,19 +161,23 @@ const routeGuidePathReal = [
 
 const createRoadLikeRoute = (from, to, real = false) => {
   if (real) {
-    const midA = [from[0], (from[1] + to[1]) / 2]
-    const midB = [(from[0] + to[0]) / 2, midA[1]]
-    const midC = [midB[0], to[1]]
-    return [from, midA, midB, midC, to]
+    const bend1 = [from[0] + (to[0] - from[0]) * 0.18, from[1]]
+    const bend2 = [bend1[0], from[1] + (to[1] - from[1]) * 0.42]
+    const bend3 = [from[0] + (to[0] - from[0]) * 0.64, bend2[1]]
+    const bend4 = [bend3[0], from[1] + (to[1] - from[1]) * 0.78]
+    const bend5 = [from[0] + (to[0] - from[0]) * 0.88, bend4[1]]
+    return [from, bend1, bend2, bend3, bend4, bend5, to]
   }
 
-  const midX = (from[1] + to[1]) / 2
-  const midY = (from[0] + to[0]) / 2
+  const deltaY = to[0] - from[0]
+  const deltaX = to[1] - from[1]
   return [
     from,
-    [from[0], midX],
-    [midY, midX],
-    [midY, to[1]],
+    [from[0] + deltaY * 0.16, from[1]],
+    [from[0] + deltaY * 0.16, from[1] + deltaX * 0.42],
+    [from[0] + deltaY * 0.55, from[1] + deltaX * 0.42],
+    [from[0] + deltaY * 0.55, from[1] + deltaX * 0.78],
+    [from[0] + deltaY * 0.86, from[1] + deltaX * 0.78],
     to
   ]
 }
@@ -373,6 +377,9 @@ export default function NewExperience({ onBack }) {
     const trackingMapMode = mapMode
     const routeToFollow = activeRoutePath.length > 1 ? interpolateRoute(activeRoutePath, trackingMapMode === 'real' ? 8 : 10) : null
     routeCursor.current = 0
+    if (routeToFollow?.length) {
+      setPath([routeToFollow[0]])
+    }
     demoTimer.current = window.setInterval(() => {
       setSeconds(value => value + 1)
       setPath(prev => {
@@ -539,10 +546,13 @@ export default function NewExperience({ onBack }) {
     if (facilityGroups[action.id]) {
       setVisibleFacilityType(action.id)
       setGuideMode(false)
+      setActiveRoutePath([])
       setSideNotice(`${action.label} 已显示在地图上`)
     } else if (action.id === 'route') {
       const target = mapMode === 'real' ? routeGuidePathReal[routeGuidePathReal.length - 1] : routeGuidePath[routeGuidePath.length - 1]
-      setActiveRoutePath(createRoadLikeRoute(currentCenter, target, mapMode === 'real'))
+      const route = createRoadLikeRoute(currentCenter, target, mapMode === 'real')
+      setPath([currentCenter])
+      setActiveRoutePath(route)
       setGuideMode(true)
       setVisibleFacilityType('water')
       setSideNotice('路线指引已开启')
@@ -563,7 +573,9 @@ export default function NewExperience({ onBack }) {
       const firstPlace = facilityGroups[activeSide.id]?.[0]
       if (firstPlace) {
         const target = mapMode === 'real' ? firstPlace.realPosition : firstPlace.position
-        setActiveRoutePath(createRoadLikeRoute(currentCenter, target, mapMode === 'real'))
+        const route = createRoadLikeRoute(currentCenter, target, mapMode === 'real')
+        setPath([currentCenter])
+        setActiveRoutePath(route)
       }
       setSideNotice(`${activeSide.label} 导航已开启`)
     } else {
@@ -578,6 +590,7 @@ export default function NewExperience({ onBack }) {
     setVisibleFacilityType(place.type)
     const target = mapMode === 'real' ? place.realPosition : place.position
     const route = createRoadLikeRoute(currentCenter, target, mapMode === 'real')
+    setPath([currentCenter])
     setActiveRoutePath(route)
     setSideNotice(`正在导航到 ${place.label}`)
     window.setTimeout(() => setSideNotice(''), 2200)
@@ -817,7 +830,7 @@ export default function NewExperience({ onBack }) {
           <span className="panel-handle" />
           <h2>遛宠完成！</h2>
           <p>本次遛宠 {routeDistance}km，耗时 {displayTime}</p>
-          <button className="photo-uploader">
+          <button className="photo-uploader" onClick={() => setSideNotice('已模拟打开相册，Demo 将使用默认打卡图')}>
             <span dangerouslySetInnerHTML={{ __html: pixelIcon('camera') }} />
             添加照片
           </button>
@@ -909,8 +922,10 @@ export default function NewExperience({ onBack }) {
               <h2>{activePanelDetail.title}</h2>
               <p>{activePanelDetail.meta}</p>
               <div className="panel-detail-actions">
-                <button>收藏</button>
-                <button>立即查看</button>
+                <button onClick={() => setSideNotice('已收藏到我的遛宠清单')}>收藏</button>
+                <button onClick={() => setSideNotice(`${activePanelDetail.title} 已打开`)}>
+                  立即查看
+                </button>
               </div>
             </article>
           ) : (
