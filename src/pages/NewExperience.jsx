@@ -39,18 +39,18 @@ const START_CENTER_REAL = [39.92915, 116.60963]
 const toImagePoint = (xPercent, yPercent) => [MAP_HEIGHT * yPercent, MAP_WIDTH * xPercent]
 
 const walkers = [
-  { id: 'p1', name: 'Momo', pet: '橘猫', asset: '1_marker_90f.gif', position: toImagePoint(0.30, 0.35), realPosition: [39.9366, 116.5968], bubble: '慢走中～' },
-  { id: 'p2', name: 'Seven', pet: '橘猫', asset: '2_marker_90f.gif', position: toImagePoint(0.72, 0.34), realPosition: [39.9184, 116.6306], bubble: '求搭子!' },
-  { id: 'p3', name: 'Luna', pet: '柯基', asset: '3_marker_90f.gif', position: toImagePoint(0.24, 0.55), realPosition: [39.9468, 116.5862], bubble: '草坪见' },
-  { id: 'p4', name: '奶盖', pet: '萨摩耶', asset: '4_marker_90f.gif', position: toImagePoint(0.78, 0.55), realPosition: [39.9105, 116.6395], bubble: '代遛结束' },
-  { id: 'p5', name: '阿布', pet: '柯基', asset: '6_marker_90f.gif', position: toImagePoint(0.38, 0.70), realPosition: [39.9238, 116.6055], bubble: '休息中' },
-  { id: 'p6', name: '栗子', pet: '柴犬', asset: '1_marker_90f.gif', position: toImagePoint(0.66, 0.70), realPosition: [39.9028, 116.6122], bubble: '补水啦' },
-  { id: 'p7', name: '花花', pet: '猫咪', asset: '2_marker_90f.gif', position: toImagePoint(0.47, 0.28), realPosition: [39.9554, 116.6224], bubble: '晒太阳' },
-  { id: 'p8', name: '团子', pet: '柯基', asset: '3_marker_90f.gif', position: toImagePoint(0.58, 0.43), realPosition: [39.9392, 116.6478], bubble: '等搭子' },
-  { id: 'p9', name: '豆包', pet: '柴犬', asset: '4_marker_90f.gif', position: toImagePoint(0.16, 0.74), realPosition: [39.8952, 116.5778], bubble: '路线不错' },
-  { id: 'p10', name: '小八', pet: '柯基', asset: '6_marker_90f.gif', position: toImagePoint(0.86, 0.72), realPosition: [39.963, 116.584], bubble: '慢跑中' },
-  { id: 'p11', name: '乌龙', pet: '柴犬', asset: '1_marker_90f.gif', position: toImagePoint(0.18, 0.27), realPosition: [39.8855, 116.6542], bubble: '已签到' },
-  { id: 'p12', name: '可乐', pet: '猫咪', asset: '2_marker_90f.gif', position: toImagePoint(0.83, 0.28), realPosition: [39.9712, 116.6658], bubble: '回家啦' }
+  { id: 'p1', name: 'Momo', pet: '橘猫', asset: '1_marker_90f.webp', position: toImagePoint(0.30, 0.35), realPosition: [39.9366, 116.5968], bubble: '慢走中～' },
+  { id: 'p2', name: 'Seven', pet: '橘猫', asset: '2_marker_90f.webp', position: toImagePoint(0.72, 0.34), realPosition: [39.9184, 116.6306], bubble: '求搭子!' },
+  { id: 'p3', name: 'Luna', pet: '柯基', asset: '3_marker_90f.webp', position: toImagePoint(0.24, 0.55), realPosition: [39.9468, 116.5862], bubble: '草坪见' },
+  { id: 'p4', name: '奶盖', pet: '萨摩耶', asset: '4_marker_90f.webp', position: toImagePoint(0.78, 0.55), realPosition: [39.9105, 116.6395], bubble: '代遛结束' },
+  { id: 'p5', name: '阿布', pet: '柯基', asset: '6_marker_90f.webp', position: toImagePoint(0.38, 0.70), realPosition: [39.9238, 116.6055], bubble: '休息中' },
+  { id: 'p6', name: '栗子', pet: '柴犬', asset: '1_marker_90f.webp', position: toImagePoint(0.66, 0.70), realPosition: [39.9028, 116.6122], bubble: '补水啦' },
+  { id: 'p7', name: '花花', pet: '猫咪', asset: '2_marker_90f.webp', position: toImagePoint(0.47, 0.28), realPosition: [39.9554, 116.6224], bubble: '晒太阳' },
+  { id: 'p8', name: '团子', pet: '柯基', asset: '3_marker_90f.webp', position: toImagePoint(0.58, 0.43), realPosition: [39.9392, 116.6478], bubble: '等搭子' },
+  { id: 'p9', name: '豆包', pet: '柴犬', asset: '4_marker_90f.webp', position: toImagePoint(0.16, 0.74), realPosition: [39.8952, 116.5778], bubble: '路线不错' },
+  { id: 'p10', name: '小八', pet: '柯基', asset: '6_marker_90f.webp', position: toImagePoint(0.86, 0.72), realPosition: [39.963, 116.584], bubble: '慢跑中' },
+  { id: 'p11', name: '乌龙', pet: '柴犬', asset: '1_marker_90f.webp', position: toImagePoint(0.18, 0.27), realPosition: [39.8855, 116.6542], bubble: '已签到' },
+  { id: 'p12', name: '可乐', pet: '猫咪', asset: '2_marker_90f.webp', position: toImagePoint(0.83, 0.28), realPosition: [39.9712, 116.6658], bubble: '回家啦' }
 ]
 
 const START_CENTER = toImagePoint(0.51, 0.37)
@@ -284,9 +284,9 @@ const createPixelIcon = (walker, hidden = false, bubble = '', markerScale = 1) =
       <span class="new-pixel-name">${walker.name}</span>
     </span>
   `,
-  iconSize: [132, 132],
-  iconAnchor: [66, 116],
-  popupAnchor: [0, -96]
+  iconSize: [180, 180],
+  iconAnchor: [90, 160],
+  popupAnchor: [0, -136]
 })
 
 const createSelfIcon = (bubble = '', isWalking = false, markerScale = 1) => L.divIcon({
@@ -295,13 +295,13 @@ const createSelfIcon = (bubble = '', isWalking = false, markerScale = 1) => L.di
     <span class="marker-scale is-visible-scale" style="--marker-scale:${markerScale}">
       <span class="new-walk-aura"></span>
       <span class="new-pixel-bubble ${bubble ? 'show' : ''}">${bubble}</span>
-      <img class="new-character-sprite self" src="${characterAsset(isWalking ? '5.1_marker_90f.gif' : '5_marker_90f.gif')}" alt="我" />
+      <img class="new-character-sprite self" src="${characterAsset(isWalking ? '5.1_marker_90f.webp' : '5_marker_90f.webp')}" alt="我" />
       <span class="new-pixel-name">我</span>
     </span>
   `,
-  iconSize: [140, 140],
-  iconAnchor: [70, 124],
-  popupAnchor: [0, -104]
+  iconSize: [180, 180],
+  iconAnchor: [90, 160],
+  popupAnchor: [0, -136]
 })
 
 const createFacilityIcon = (place, markerScale = 1) => L.divIcon({
@@ -335,6 +335,7 @@ export default function NewExperience({ onBack }) {
   const [seconds, setSeconds] = useState(0)
   const [path, setPath] = useState([START_CENTER])
   const [message, setMessage] = useState('')
+  const [messageOpen, setMessageOpen] = useState(false)
   const [selfBubble, setSelfBubble] = useState('')
   const [walkerBubbles, setWalkerBubbles] = useState(() => Object.fromEntries(walkers.map(w => [w.id, ''])))
   const [walkerHistory, setWalkerHistory] = useState(() => Object.fromEntries(walkers.map(w => [w.id, []])))
@@ -420,6 +421,7 @@ export default function NewExperience({ onBack }) {
     setActiveRoutePath([])
     setVisibleFacilityType(null)
     setActiveSide(null)
+    setMessageOpen(false)
     setSeconds(0)
     setPath([mapMode === 'real' ? START_CENTER_REAL : START_CENTER])
     setLocationStatus(mapMode === 'real' ? '现实地图已开启，路线与导航使用真实经纬度演示' : '像素地图已开启，点击 GO 开始记录路线')
@@ -538,8 +540,15 @@ export default function NewExperience({ onBack }) {
   }
 
   const handleSideAction = (action) => {
-    if (activeSide?.id === action.id) {
+    if (activeSide?.id === action.id || visibleFacilityType === action.id) {
       setActiveSide(null)
+      if (facilityGroups[action.id]) {
+        setVisibleFacilityType(null)
+        setGuideMode(false)
+        setActiveRoutePath([])
+        setSideNotice(`${action.label} 已隐藏`)
+        window.setTimeout(() => setSideNotice(''), 1600)
+      }
       return
     }
     setActiveSide(action)
@@ -601,6 +610,7 @@ export default function NewExperience({ onBack }) {
     if (!text) return
     setSelfBubble(text)
     setMessage('')
+    setMessageOpen(false)
     window.setTimeout(() => setSelfBubble(''), 5000)
   }
 
@@ -613,7 +623,7 @@ export default function NewExperience({ onBack }) {
   }
 
   return (
-    <div className={`new-experience ${activePage !== 'go' ? 'is-panel-mode' : ''}`}>
+    <div className={`new-experience ${activePage !== 'go' ? 'is-panel-mode' : ''} ${showPublishSheet ? 'is-publishing' : ''} ${messageOpen ? 'message-open' : ''}`}>
       {mapMode === 'pixel' ? (
       <MapContainer
         key="pixel-map"
@@ -749,7 +759,24 @@ export default function NewExperience({ onBack }) {
             {mapMode === 'real' ? '像素地图' : '现实地图'}
           </button>
         </div>
-        <section className="player-card">
+        <section
+          className="player-card"
+          role="button"
+          tabIndex={0}
+          onClick={() => {
+            setActiveNav(4)
+            setPanelExpanded(true)
+            setActivePanelDetail(null)
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault()
+              setActiveNav(4)
+              setPanelExpanded(true)
+              setActivePanelDetail(null)
+            }
+          }}
+        >
           <div className="player-avatar">
             <span className="pixel-dog-face"><i></i></span>
           </div>
@@ -779,7 +806,14 @@ export default function NewExperience({ onBack }) {
         <em>{locationStatus}</em>
       </section>}
 
-      {activePage === 'go' && <button className="locate-button" onClick={locateMe}>回中心</button>}
+      {activePage === 'go' && !showPublishSheet && (
+        <button
+          className={`message-fab ${messageOpen ? 'open' : ''}`}
+          onClick={() => setMessageOpen(value => !value)}
+        >
+          {messageOpen ? '收起' : '发消息'}
+        </button>
+      )}
 
       {activePage === 'go' && <aside className="new-side-actions">
         {sideActions.map((action) => (
@@ -810,7 +844,7 @@ export default function NewExperience({ onBack }) {
 
       <div className={`new-portal-fx ${modeFx}`} />
 
-      {activePage === 'go' && (
+      {activePage === 'go' && messageOpen && !showPublishSheet && (
         <section className="new-message-panel">
           <input
             value={message}
