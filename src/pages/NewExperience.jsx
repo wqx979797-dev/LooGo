@@ -31,8 +31,8 @@ const navItems = [
 const MAP_WIDTH = 8192
 const MAP_HEIGHT = 8192
 const IMAGE_BOUNDS = [[0, 0], [MAP_HEIGHT, MAP_WIDTH]]
-const PIXEL_INITIAL_ZOOM = -1.18
-const PIXEL_MIN_ZOOM = -1.68
+const PIXEL_INITIAL_ZOOM = -1.05
+const PIXEL_MIN_ZOOM = -2.25
 const REAL_INITIAL_ZOOM = 15
 const START_CENTER_REAL = [39.92915, 116.60963]
 
@@ -218,29 +218,64 @@ function MapResizer() {
   return null
 }
 
-function MapFollower({ center }) {
+function MapFollower({ center, follow = true }) {
   const map = useMap()
 
   useEffect(() => {
+    if (!follow) return
     map.setView(center, map.getZoom(), { animate: false })
-  }, [center, map])
+  }, [center, follow, map])
 
   return null
 }
 
-function MapZoomTracker({ onZoom }) {
+function MapZoomTracker({ onZoom, onGestureChange }) {
+  const lockTimer = useRef(null)
+  const setGesture = (value, delay = 0) => {
+    if (lockTimer.current) window.clearTimeout(lockTimer.current)
+    if (delay) {
+      lockTimer.current = window.setTimeout(() => onGestureChange(value), delay)
+    } else {
+      onGestureChange(value)
+    }
+  }
+
   const map = useMapEvents({
+    zoomstart() {
+      setGesture(true)
+    },
     zoom() {
       onZoom(map.getZoom())
     },
     zoomend() {
       onZoom(map.getZoom())
+      setGesture(false, 180)
+    },
+    movestart() {
+      setGesture(true)
+    },
+    moveend() {
+      setGesture(false, 140)
     }
   })
 
   useEffect(() => {
     onZoom(map.getZoom())
-  }, [map, onZoom])
+    const container = map.getContainer()
+    const handleTouchStart = (event) => {
+      if (event.touches?.length > 1) setGesture(true)
+    }
+    const handleTouchEnd = () => setGesture(false, 180)
+    container.addEventListener('touchstart', handleTouchStart, { passive: true })
+    container.addEventListener('touchend', handleTouchEnd, { passive: true })
+    container.addEventListener('touchcancel', handleTouchEnd, { passive: true })
+    return () => {
+      if (lockTimer.current) window.clearTimeout(lockTimer.current)
+      container.removeEventListener('touchstart', handleTouchStart)
+      container.removeEventListener('touchend', handleTouchEnd)
+      container.removeEventListener('touchcancel', handleTouchEnd)
+    }
+  }, [map, onGestureChange, onZoom])
 
   return null
 }
@@ -275,17 +310,17 @@ const mapAsset = (fileName) => publicAsset(`maps/${fileName}`)
 const iconAsset = (type) => publicAsset(`icons/${iconNameMap[type] ?? type}.png`)
 const pixelIcon = (type) => `<img class="game-icon game-icon-img ${type}" src="${iconAsset(type)}" alt="" />`
 
-const createPixelIcon = (walker, hidden = false, bubble = '', markerScale = 1) => L.divIcon({
+const createPixelIcon = (walker, hidden = false, bubble = '', markerScale = 1, locked = false) => L.divIcon({
   className: `new-pixel-marker ${hidden ? 'is-hidden' : 'is-visible'}`,
   html: `
-    <span class="marker-scale ${hidden ? 'is-hidden-scale' : 'is-visible-scale'}" style="--marker-scale:${markerScale}">
+    <span class="marker-scale ${locked ? 'is-gesture-locked' : ''} ${hidden ? 'is-hidden-scale' : 'is-visible-scale'}" style="--marker-scale:${markerScale}">
       <span class="new-pixel-bubble ${bubble ? 'show' : ''}">${bubble}</span>
       <img class="new-character-sprite" src="${characterAsset(walker.asset)}" alt="${walker.name}" />
       <span class="new-pixel-name">${walker.name}</span>
     </span>
   `,
   iconSize: [180, 180],
-  iconAnchor: [90, 160],
+  iconAnchor: [90, 168],
   popupAnchor: [0, -136]
 })
 
@@ -300,7 +335,7 @@ const createSelfIcon = (bubble = '', isWalking = false, markerScale = 1) => L.di
     </span>
   `,
   iconSize: [180, 180],
-  iconAnchor: [90, 160],
+  iconAnchor: [90, 168],
   popupAnchor: [0, -136]
 })
 
@@ -312,8 +347,8 @@ const createFacilityIcon = (place, markerScale = 1) => L.divIcon({
       <b>${place.label}</b>
     </span>
   `,
-  iconSize: [92, 80],
-  iconAnchor: [46, 68],
+  iconSize: [96, 86],
+  iconAnchor: [48, 78],
   popupAnchor: [0, -62]
 })
 
@@ -332,6 +367,9 @@ export default function NewExperience({ onBack }) {
   const [guideMode, setGuideMode] = useState(false)
   const [activeRoutePath, setActiveRoutePath] = useState([])
   const [zoomLevel, setZoomLevel] = useState(0)
+  const [mapGestureLocked, setMapGestureLocked] = useState(false)
+  const [navDragOffset, setNavDragOffset] = useState(0)
+  const [navDragging, setNavDragging] = useState(false)
   const [seconds, setSeconds] = useState(0)
   const [path, setPath] = useState([START_CENTER])
   const [message, setMessage] = useState('')
@@ -343,6 +381,8 @@ export default function NewExperience({ onBack }) {
   const [activeSide, setActiveSide] = useState(null)
   const [locationStatus, setLocationStatus] = useState('点击 GO 后开始获取定位')
   const dragStartX = useRef(null)
+  const navDragLastTick = useRef(0)
+  const navDidDrag = useRef(false)
   const watchId = useRef(null)
   const demoTimer = useRef(null)
   const routeCursor = useRef(0)
@@ -356,9 +396,7 @@ export default function NewExperience({ onBack }) {
   const displayPath = mapMode === 'real' ? path.filter(isRealPoint) : path.filter(point => !isRealPoint(point))
   const activePage = navItems[activeNav].id
   const routeDistance = Math.max((path.length - 1) * 0.02, 0).toFixed(2)
-  const markerScale = mapMode === 'real'
-    ? Math.max(0.42, Math.min(0.68, zoomLevel / 23))
-    : Math.max(0.42, Math.min(0.82, 0.54 * (2 ** (zoomLevel + 1.35))))
+  const markerScale = mapMode === 'real' ? 0.56 : 0.62
   const selfMarkerScale = markerScale * 1.08
   const visibleFacilities = visibleFacilityType ? facilityGroups[visibleFacilityType] ?? [] : []
 
@@ -470,6 +508,14 @@ export default function NewExperience({ onBack }) {
     return diff
   }
 
+  const navVisualOffset = (index) => navOffset(index) + (navDragging ? navDragOffset / 86 : 0)
+
+  const triggerHaptic = () => {
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      navigator.vibrate(8)
+    }
+  }
+
   const rotateNav = (direction) => {
     setActiveNav(value => (value + direction + navItems.length) % navItems.length)
   }
@@ -523,6 +569,10 @@ export default function NewExperience({ onBack }) {
   }
 
   const handleNavClick = (index) => {
+    if (navDidDrag.current) {
+      navDidDrag.current = false
+      return
+    }
     const wasActive = activeNav === index
     setActiveNav(index)
     setPanelExpanded(false)
@@ -614,16 +664,45 @@ export default function NewExperience({ onBack }) {
     window.setTimeout(() => setSelfBubble(''), 5000)
   }
 
+  const handleDragStart = (event) => {
+    dragStartX.current = event.clientX
+    navDragLastTick.current = 0
+    navDidDrag.current = false
+    setNavDragging(true)
+    setNavDragOffset(0)
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+  }
+
+  const handleDragMove = (event) => {
+    if (dragStartX.current === null) return
+    const delta = event.clientX - dragStartX.current
+    const limited = Math.max(-220, Math.min(220, delta))
+    if (Math.abs(limited) > 6) navDidDrag.current = true
+    setNavDragOffset(limited)
+    const tick = Math.trunc(limited / 43)
+    if (tick !== navDragLastTick.current) {
+      navDragLastTick.current = tick
+      triggerHaptic()
+    }
+  }
+
   const handleDragEnd = (event) => {
     if (dragStartX.current === null) return
     const delta = event.clientX - dragStartX.current
     dragStartX.current = null
+    setNavDragging(false)
+    setNavDragOffset(0)
+    event.currentTarget.releasePointerCapture?.(event.pointerId)
     if (Math.abs(delta) < 28) return
-    rotateNav(delta < 0 ? 1 : -1)
+    const steps = Math.max(-2, Math.min(2, Math.round(-delta / 86)))
+    if (steps !== 0) {
+      setActiveNav(value => (value + steps + navItems.length) % navItems.length)
+      triggerHaptic()
+    }
   }
 
   return (
-    <div className={`new-experience ${activePage !== 'go' ? 'is-panel-mode' : ''} ${showPublishSheet ? 'is-publishing' : ''} ${messageOpen ? 'message-open' : ''}`}>
+    <div className={`new-experience ${activePage !== 'go' ? 'is-panel-mode' : ''} ${showPublishSheet ? 'is-publishing' : ''} ${messageOpen ? 'message-open' : ''} ${mapGestureLocked ? 'map-gesture-lock' : ''} ${navDragging ? 'nav-is-dragging' : ''}`}>
       {mapMode === 'pixel' ? (
       <MapContainer
         key="pixel-map"
@@ -635,16 +714,16 @@ export default function NewExperience({ onBack }) {
         zoomSnap={0.25}
         zoomDelta={0.5}
         zoomControl
-        zoomAnimation={false}
-        fadeAnimation={false}
+        zoomAnimation
+        fadeAnimation
         style={{ height: '100dvh', minHeight: '100vh', width: '100%' }}
         scrollWheelZoom
         doubleClickZoom
         attributionControl={false}
       >
         <MapResizer />
-        <MapZoomTracker onZoom={setZoomLevel} />
-        <MapFollower center={currentCenter} />
+        <MapZoomTracker onZoom={setZoomLevel} onGestureChange={setMapGestureLocked} />
+        <MapFollower center={currentCenter} follow={isWalking} />
         <ImageOverlay url={mapAsset('ditu-mobile.jpg')} bounds={IMAGE_BOUNDS} />
         {guideMode && <Polyline positions={activeRoutePath.length ? activeRoutePath : routeGuidePath} color="#f4a244" weight={7} opacity={0.86} dashArray="14 10" />}
         <Polyline positions={displayPath} color="#5B4636" weight={6} opacity={0.85} />
@@ -657,8 +736,9 @@ export default function NewExperience({ onBack }) {
             <Marker
               key={`${walker.id}-${mode}-${visible}`}
               position={mapMode === 'real' ? walker.realPosition : walker.position}
-              icon={createPixelIcon(walker, !visible, visible ? walkerBubbles[walker.id] : '', markerScale)}
-              eventHandlers={{
+              icon={createPixelIcon(walker, !visible, visible ? walkerBubbles[walker.id] : '', markerScale, mapGestureLocked)}
+              interactive={!mapGestureLocked}
+              eventHandlers={mapGestureLocked ? {} : {
                 click: () => {
                   setWalkerBubbles(prev => ({ ...prev, [walker.id]: prev[walker.id] ? '' : walker.bubble }))
                 }
@@ -688,21 +768,21 @@ export default function NewExperience({ onBack }) {
         key="real-map"
         center={START_CENTER_REAL}
         zoom={REAL_INITIAL_ZOOM}
-        minZoom={12}
+        minZoom={10}
         maxZoom={19}
         zoomSnap={0.25}
         zoomDelta={0.5}
         zoomControl
-        zoomAnimation={false}
-        fadeAnimation={false}
+        zoomAnimation
+        fadeAnimation
         style={{ height: '100dvh', minHeight: '100vh', width: '100%' }}
         scrollWheelZoom
         doubleClickZoom
         attributionControl={false}
       >
         <MapResizer />
-        <MapZoomTracker onZoom={setZoomLevel} />
-        <MapFollower center={currentCenter} />
+        <MapZoomTracker onZoom={setZoomLevel} onGestureChange={setMapGestureLocked} />
+        <MapFollower center={currentCenter} follow={isWalking} />
         <TileLayer
           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
           maxZoom={19}
@@ -718,8 +798,9 @@ export default function NewExperience({ onBack }) {
             <Marker
               key={`real-${walker.id}-${mode}-${visible}`}
               position={walker.realPosition}
-              icon={createPixelIcon(walker, !visible, visible ? walkerBubbles[walker.id] : '', markerScale)}
-              eventHandlers={{
+              icon={createPixelIcon(walker, !visible, visible ? walkerBubbles[walker.id] : '', markerScale, mapGestureLocked)}
+              interactive={!mapGestureLocked}
+              eventHandlers={mapGestureLocked ? {} : {
                 click: () => {
                   setWalkerBubbles(prev => ({ ...prev, [walker.id]: prev[walker.id] ? '' : walker.bubble }))
                 }
@@ -885,22 +966,29 @@ export default function NewExperience({ onBack }) {
 
       <section
         className="new-loop-nav"
-        onPointerDown={(event) => { dragStartX.current = event.clientX }}
+        style={{ '--nav-drag': `${navDragOffset}px` }}
+        onPointerDown={handleDragStart}
+        onPointerMove={handleDragMove}
         onPointerUp={handleDragEnd}
-        onPointerCancel={() => { dragStartX.current = null }}
+        onPointerCancel={() => {
+          dragStartX.current = null
+          setNavDragging(false)
+          setNavDragOffset(0)
+        }}
       >
         <div className="new-loop-track">
           {navItems.map((item, index) => {
-            const offset = navOffset(index)
+            const baseOffset = navOffset(index)
+            const offset = navVisualOffset(index)
             return (
               <button
                 key={item.id}
                 onClick={() => handleNavClick(index)}
-                className={`new-loop-item offset-${offset} ${offset === 0 ? 'active' : ''} ${item.id === 'go' ? 'go' : ''} ${item.id === 'go' && (isWalking || hasRouteDraft) ? 'route-active' : ''}`}
+                className={`new-loop-item offset-${baseOffset} ${baseOffset === 0 ? 'active' : ''} ${item.id === 'go' ? 'go' : ''} ${item.id === 'go' && (isWalking || hasRouteDraft) ? 'route-active' : ''}`}
                 style={{
                   '--x': `${offset * 86}px`,
-                  '--scale': 1 - Math.abs(offset) * 0.14,
-                  '--alpha': 1 - Math.abs(offset) * 0.16
+                  '--scale': Math.max(0.56, 1 - Math.abs(offset) * 0.14),
+                  '--alpha': Math.max(0.18, 1 - Math.abs(offset) * 0.16)
                 }}
               >
                 <span dangerouslySetInnerHTML={{ __html: pixelIcon(item.icon) }} />
