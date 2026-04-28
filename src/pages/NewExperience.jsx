@@ -31,7 +31,7 @@ const navItems = [
 const MAP_WIDTH = 8192
 const MAP_HEIGHT = 8192
 const IMAGE_BOUNDS = [[0, 0], [MAP_HEIGHT, MAP_WIDTH]]
-const PIXEL_TILE_OFFSETS = [-1, 0, 1]
+const PIXEL_TILE_OFFSETS = [-2, -1, 0, 1, 2]
 const PIXEL_INITIAL_ZOOM = -1.05
 const PIXEL_MIN_ZOOM = -2.25
 const REAL_INITIAL_ZOOM = 15
@@ -282,6 +282,7 @@ function MapZoomTracker({ onZoom, onGestureChange }) {
 }
 
 function PixelTileLayer() {
+  const tileKeyRef = useRef('')
   const tileAround = (center) => {
     const row = Math.floor(center.lat / MAP_HEIGHT)
     const col = Math.floor(center.lng / MAP_WIDTH)
@@ -292,17 +293,33 @@ function PixelTileLayer() {
   }
 
   const map = useMapEvents({
+    move() {
+      const center = map.getCenter()
+      const row = Math.floor(center.lat / MAP_HEIGHT)
+      const col = Math.floor(center.lng / MAP_WIDTH)
+      const key = `${row}:${col}`
+      if (key !== tileKeyRef.current) {
+        tileKeyRef.current = key
+        setTiles(tileAround(center))
+      }
+    },
     moveend() {
-      setTiles(tileAround(map.getCenter()))
+      const center = map.getCenter()
+      tileKeyRef.current = `${Math.floor(center.lat / MAP_HEIGHT)}:${Math.floor(center.lng / MAP_WIDTH)}`
+      setTiles(tileAround(center))
     },
     zoomend() {
-      setTiles(tileAround(map.getCenter()))
+      const center = map.getCenter()
+      tileKeyRef.current = `${Math.floor(center.lat / MAP_HEIGHT)}:${Math.floor(center.lng / MAP_WIDTH)}`
+      setTiles(tileAround(center))
     }
   })
   const [tiles, setTiles] = useState(() => tileAround(map.getCenter()))
 
   useEffect(() => {
-    setTiles(tileAround(map.getCenter()))
+    const center = map.getCenter()
+    tileKeyRef.current = `${Math.floor(center.lat / MAP_HEIGHT)}:${Math.floor(center.lng / MAP_WIDTH)}`
+    setTiles(tileAround(center))
   }, [map])
 
   return tiles.map(({ row, col }) => (
@@ -421,6 +438,7 @@ export default function NewExperience({ onBack }) {
   const dragStartX = useRef(null)
   const navDragLastTick = useRef(0)
   const navDidDrag = useRef(false)
+  const navPointerId = useRef(null)
   const countdownTimer = useRef(null)
   const watchId = useRef(null)
   const demoTimer = useRef(null)
@@ -731,18 +749,20 @@ export default function NewExperience({ onBack }) {
   }
 
   const handleDragStart = (event) => {
+    if (event.button !== undefined && event.button !== 0) return
     dragStartX.current = event.clientX
+    navPointerId.current = event.pointerId
     navDragLastTick.current = 0
     navDidDrag.current = false
     setNavDragOffset(0)
-    event.currentTarget.setPointerCapture?.(event.pointerId)
   }
 
   const handleDragMove = (event) => {
     if (dragStartX.current === null) return
+    if (navPointerId.current !== null && event.pointerId !== navPointerId.current) return
     const delta = event.clientX - dragStartX.current
     const limited = Math.max(-220, Math.min(220, delta))
-    if (Math.abs(limited) <= 16 && !navDragging) return
+    if (Math.abs(limited) <= 34 && !navDragging) return
     navDidDrag.current = true
     if (!navDragging) {
       setNavDragging(true)
@@ -758,12 +778,13 @@ export default function NewExperience({ onBack }) {
 
   const handleDragEnd = (event) => {
     if (dragStartX.current === null) return
+    if (navPointerId.current !== null && event.pointerId !== navPointerId.current) return
     const delta = event.clientX - dragStartX.current
     dragStartX.current = null
+    navPointerId.current = null
     setNavDragging(false)
     setNavDragOffset(0)
-    event.currentTarget.releasePointerCapture?.(event.pointerId)
-    if (Math.abs(delta) < 28) return
+    if (!navDidDrag.current || Math.abs(delta) < 56) return
     const steps = Math.max(-2, Math.min(2, Math.round(-delta / 86)))
     if (steps !== 0) {
       setActiveNav(value => (value + steps + navItems.length) % navItems.length)
@@ -793,7 +814,7 @@ export default function NewExperience({ onBack }) {
       >
         <MapResizer />
         <MapZoomTracker onZoom={setZoomLevel} onGestureChange={setMapGestureLocked} />
-        <MapFollower center={currentCenter} follow={isWalking} />
+        <MapFollower center={currentCenter} follow={isWalking && !mapGestureLocked} />
         <PixelTileLayer />
         {guideMode && <Polyline positions={activeRoutePath.length ? activeRoutePath : routeGuidePath} color="#f4a244" weight={7} opacity={0.86} dashArray="14 10" />}
         <Polyline positions={displayPath} color="#5B4636" weight={6} opacity={0.85} />
@@ -852,7 +873,7 @@ export default function NewExperience({ onBack }) {
       >
         <MapResizer />
         <MapZoomTracker onZoom={setZoomLevel} onGestureChange={setMapGestureLocked} />
-        <MapFollower center={currentCenter} follow={isWalking} />
+        <MapFollower center={currentCenter} follow={isWalking && !mapGestureLocked} />
         <TileLayer
           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
           maxZoom={19}
@@ -1048,6 +1069,8 @@ export default function NewExperience({ onBack }) {
         onPointerUp={handleDragEnd}
         onPointerCancel={() => {
           dragStartX.current = null
+          navPointerId.current = null
+          navDidDrag.current = false
           setNavDragging(false)
           setNavDragOffset(0)
         }}

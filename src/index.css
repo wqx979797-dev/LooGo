@@ -6130,3 +6130,86 @@ html, body, #root { background: #f4f8e6 !important; }
     font-size: 58px;
   }
 }
+
+/* Tap-safe release patch: navigation remains clickable, scale ticks live on the dock arc. */
+.new-loop-nav {
+  pointer-events: auto !important;
+  touch-action: pan-x !important;
+}
+
+.new-loop-track {
+  pointer-events: auto !important;
+  touch-action: pan-x !important;
+}
+
+.new-loop-item {
+  pointer-events: auto !important;
+  -webkit-tap-highlight-color: transparent !important;
+  touch-action: manipulation !important;
+}
+
+.new-loop-item:active {
+  transform: translateX(var(--x)) translateY(2px) scale(calc(var(--scale) * 0.96)) !important;
+}
+
+.new-experience.nav-is-dragging .new-loop-item:active {
+  transform: translateX(var(--x)) scale(var(--scale)) !important;
+}
+
+.new-loop-nav::before {
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 50% 4%, rgba(255,255,255,0.52) 0 8%, transparent 10%),
+    linear-gradient(180deg, rgba(215, 246, 156, 0.40), rgba(118, 190, 55, 0.50)),
+    rgba(206, 238, 152, 0.26) !important;
+}
+
+.new-loop-nav::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute !important;
+  left: 50% !important;
+  bottom: -34px !important;
+  width: min(370px, 82vw) !important;
+  height: 118px !important;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0 !important;
+  transform: translateX(calc(-50% + var(--nav-drag, 0px))) !important;
+  background: repeating-conic-gradient(
+    from -48deg at 50% 102%,
+    rgba(24, 83, 38, 0.46) 0deg 0.65deg,
+    transparent 0.65deg 4.6deg
+  ) !important;
+  -webkit-mask: radial-gradient(ellipse at 50% 102%, transparent 0 61%, #000 62% 66%, transparent 67% 100%) !important;
+  mask: radial-gradient(ellipse at 50% 102%, transparent 0 61%, #000 62% 66%, transparent 67% 100%) !important;
+  opacity: 0.52 !important;
+  pointer-events: none !important;
+  transition: opacity 180ms ease, transform 120ms linear !important;
+}
+
+.new-experience.nav-is-dragging .new-loop-nav::after {
+  opacity: 0.76 !important;
+}
+
+.new-loop-item.go.active,
+.new-loop-item.go.route-active.active {
+  isolation: isolate !important;
+}
+
+.new-loop-item.go.active > span:not(.go-liquid-actions),
+.new-loop-item.go.route-active.active > span:not(.go-liquid-actions) {
+  position: absolute !important;
+  inset: 0 !important;
+  display: block !important;
+}
+
+.new-loop-item.go.active .game-icon-img,
+.new-loop-item.go.route-active.active .game-icon-img {
+  max-width: 100% !important;
+  max-height: 100% !important;
+}
+
+.new-experience.map-gesture-lock .leaflet-marker-icon,
+.new-experience.map-gesture-lock .leaflet-marker-icon *,
+.new-experience.map-gesture-lock .leaflet-interactive {
+  pointer-events: none !important;
+}
