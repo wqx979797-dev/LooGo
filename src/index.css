@@ -5939,3 +5939,194 @@ html, body, #root { background: #f4f8e6 !important; }
     height: 30px;
   }
 }
+
+/* Final interaction patch: tap-safe dock, countdown start, fixed marker scale, tiled pixel map polish. */
+.new-experience,
+.new-experience * {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+
+.new-experience img,
+.new-experience svg,
+.game-icon-img,
+.new-character-sprite {
+  -webkit-user-drag: none !important;
+  user-drag: none !important;
+  pointer-events: none;
+}
+
+.marker-scale,
+.marker-scale.is-visible-scale,
+.marker-scale.is-hidden-scale {
+  transform: none !important;
+  transform-origin: 50% 100% !important;
+}
+
+.new-pixel-marker,
+.facility-marker {
+  background: transparent !important;
+}
+
+.new-pixel-marker .marker-scale {
+  width: 180px;
+  height: 180px;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.facility-marker .marker-scale {
+  width: 96px;
+  height: 86px;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.new-character-sprite,
+.new-character-sprite.self {
+  width: 104px !important;
+  height: 104px !important;
+  object-fit: contain !important;
+}
+
+.new-pixel-name {
+  position: absolute !important;
+  left: 50% !important;
+  bottom: 26px !important;
+  transform: translateX(-50%) !important;
+}
+
+.new-pixel-bubble {
+  bottom: 126px !important;
+}
+
+.facility-marker .game-icon-img {
+  width: 46px !important;
+  height: 46px !important;
+}
+
+.facility-marker b {
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  transform: translateX(-50%) !important;
+  white-space: nowrap;
+}
+
+.new-loop-nav {
+  touch-action: pan-x !important;
+}
+
+.new-experience:not(.nav-is-dragging) .new-loop-nav {
+  transform: none !important;
+}
+
+.new-experience.nav-is-dragging .new-loop-nav {
+  transform: scale(1.025) translateY(-2px) !important;
+}
+
+.new-loop-nav::before {
+  background:
+    repeating-linear-gradient(90deg, rgba(21, 77, 37, 0.0) 0 18px, rgba(21, 77, 37, 0.24) 18px 20px),
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,0.34), transparent 35%),
+    linear-gradient(180deg, rgba(219, 255, 178, 0.44), rgba(93, 171, 62, 0.32)),
+    rgba(231, 255, 206, 0.24) !important;
+  background-position-x: var(--nav-drag, 0px), 0, 0, 0 !important;
+  transition: transform 220ms cubic-bezier(.18, 1, .22, 1), opacity 220ms ease !important;
+}
+
+.new-loop-nav::after {
+  display: none !important;
+}
+
+.new-experience.nav-is-dragging .new-loop-nav::before {
+  opacity: 0.74 !important;
+  transform: translateX(-50%) scale(1.025) !important;
+}
+
+.new-loop-item,
+.new-loop-item * {
+  -webkit-user-drag: none !important;
+  user-drag: none !important;
+  -webkit-touch-callout: none !important;
+}
+
+.go-time-glass {
+  position: absolute;
+  inset: 18% !important;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #fff8df;
+  font-size: 18px;
+  font-style: normal;
+  font-weight: 950;
+  letter-spacing: 0.02em;
+  text-shadow: 0 2px 0 rgba(42, 74, 24, 0.45);
+  background: rgba(45, 103, 28, 0.48);
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.32), 0 6px 18px rgba(32, 87, 30, 0.2);
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+  pointer-events: none;
+}
+
+.walk-countdown {
+  position: absolute;
+  inset: 0;
+  z-index: 1500;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 48%, rgba(255,255,255,0.18), transparent 34%);
+  backdrop-filter: blur(4px) saturate(1.08);
+  -webkit-backdrop-filter: blur(4px) saturate(1.08);
+}
+
+.walk-countdown span {
+  width: 132px;
+  height: 132px;
+  display: grid;
+  place-items: center;
+  border-radius: 42% 58% 54% 46% / 48% 44% 56% 52%;
+  color: #fffbe8;
+  font-size: 64px;
+  font-weight: 1000;
+  text-shadow: 0 5px 0 rgba(57, 99, 31, 0.34);
+  background: linear-gradient(180deg, rgba(144, 215, 70, 0.92), rgba(63, 151, 48, 0.92));
+  border: 4px solid rgba(255,255,255,0.72);
+  box-shadow: 0 18px 50px rgba(38, 80, 32, 0.28), inset 0 -8px 0 rgba(35, 93, 29, 0.18);
+  animation: countdownPop 720ms cubic-bezier(.16, 1.35, .34, 1) both;
+}
+
+@keyframes countdownPop {
+  0% { opacity: 0; transform: scale(0.38) rotate(-8deg); filter: blur(8px); }
+  48% { opacity: 1; transform: scale(1.16) rotate(3deg); filter: blur(0); }
+  100% { opacity: 0.96; transform: scale(1) rotate(0); filter: blur(0); }
+}
+
+@media (max-width: 430px) {
+  .new-character-sprite,
+  .new-character-sprite.self {
+    width: 96px !important;
+    height: 96px !important;
+  }
+
+  .new-pixel-name {
+    bottom: 28px !important;
+  }
+
+  .new-pixel-bubble {
+    bottom: 122px !important;
+  }
+
+  .walk-countdown span {
+    width: 118px;
+    height: 118px;
+    font-size: 58px;
+  }
+}

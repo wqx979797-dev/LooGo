@@ -31,6 +31,7 @@ const navItems = [
 const MAP_WIDTH = 8192
 const MAP_HEIGHT = 8192
 const IMAGE_BOUNDS = [[0, 0], [MAP_HEIGHT, MAP_WIDTH]]
+const PIXEL_TILE_OFFSETS = [-1, 0, 1]
 const PIXEL_INITIAL_ZOOM = -1.05
 const PIXEL_MIN_ZOOM = -2.25
 const REAL_INITIAL_ZOOM = 15
@@ -280,6 +281,42 @@ function MapZoomTracker({ onZoom, onGestureChange }) {
   return null
 }
 
+function PixelTileLayer() {
+  const tileAround = (center) => {
+    const row = Math.floor(center.lat / MAP_HEIGHT)
+    const col = Math.floor(center.lng / MAP_WIDTH)
+    return PIXEL_TILE_OFFSETS.flatMap((rowOffset) => PIXEL_TILE_OFFSETS.map((colOffset) => ({
+      row: row + rowOffset,
+      col: col + colOffset
+    })))
+  }
+
+  const map = useMapEvents({
+    moveend() {
+      setTiles(tileAround(map.getCenter()))
+    },
+    zoomend() {
+      setTiles(tileAround(map.getCenter()))
+    }
+  })
+  const [tiles, setTiles] = useState(() => tileAround(map.getCenter()))
+
+  useEffect(() => {
+    setTiles(tileAround(map.getCenter()))
+  }, [map])
+
+  return tiles.map(({ row, col }) => (
+    <ImageOverlay
+      key={`pixel-tile-${row}-${col}`}
+      url={mapAsset('ditu-mobile.jpg')}
+      bounds={[
+        [row * MAP_HEIGHT, col * MAP_WIDTH],
+        [(row + 1) * MAP_HEIGHT, (col + 1) * MAP_WIDTH]
+      ]}
+    />
+  ))
+}
+
 const iconNameMap = {
   sign: 'task',
   calendar: 'task',
@@ -308,47 +345,47 @@ const publicAsset = (path) => {
 const characterAsset = (fileName) => publicAsset(`characters/${fileName}`)
 const mapAsset = (fileName) => publicAsset(`maps/${fileName}`)
 const iconAsset = (type) => publicAsset(`icons/${iconNameMap[type] ?? type}.png`)
-const pixelIcon = (type) => `<img class="game-icon game-icon-img ${type}" src="${iconAsset(type)}" alt="" />`
+const pixelIcon = (type) => `<img class="game-icon game-icon-img ${type}" src="${iconAsset(type)}" alt="" draggable="false" />`
 
-const createPixelIcon = (walker, hidden = false, bubble = '', markerScale = 1, locked = false) => L.divIcon({
+const createPixelIcon = (walker, hidden = false, bubble = '', locked = false) => L.divIcon({
   className: `new-pixel-marker ${hidden ? 'is-hidden' : 'is-visible'}`,
   html: `
-    <span class="marker-scale ${locked ? 'is-gesture-locked' : ''} ${hidden ? 'is-hidden-scale' : 'is-visible-scale'}" style="--marker-scale:${markerScale}">
+    <span class="marker-scale ${locked ? 'is-gesture-locked' : ''} ${hidden ? 'is-hidden-scale' : 'is-visible-scale'}">
       <span class="new-pixel-bubble ${bubble ? 'show' : ''}">${bubble}</span>
-      <img class="new-character-sprite" src="${characterAsset(walker.asset)}" alt="${walker.name}" />
+      <img class="new-character-sprite" src="${characterAsset(walker.asset)}" alt="${walker.name}" draggable="false" />
       <span class="new-pixel-name">${walker.name}</span>
     </span>
   `,
   iconSize: [180, 180],
-  iconAnchor: [90, 168],
+  iconAnchor: [90, 132],
   popupAnchor: [0, -136]
 })
 
-const createSelfIcon = (bubble = '', isWalking = false, markerScale = 1) => L.divIcon({
+const createSelfIcon = (bubble = '', isWalking = false) => L.divIcon({
   className: `new-pixel-marker self ${isWalking ? 'is-walking' : ''}`,
   html: `
-    <span class="marker-scale is-visible-scale" style="--marker-scale:${markerScale}">
+    <span class="marker-scale is-visible-scale">
       <span class="new-walk-aura"></span>
       <span class="new-pixel-bubble ${bubble ? 'show' : ''}">${bubble}</span>
-      <img class="new-character-sprite self" src="${characterAsset(isWalking ? '5.1_marker_90f.webp' : '5_marker_90f.webp')}" alt="我" />
+      <img class="new-character-sprite self" src="${characterAsset(isWalking ? '5.1_marker_90f.webp' : '5_marker_90f.webp')}" alt="我" draggable="false" />
       <span class="new-pixel-name">我</span>
     </span>
   `,
   iconSize: [180, 180],
-  iconAnchor: [90, 168],
+  iconAnchor: [90, 132],
   popupAnchor: [0, -136]
 })
 
-const createFacilityIcon = (place, markerScale = 1) => L.divIcon({
+const createFacilityIcon = (place) => L.divIcon({
   className: `facility-marker ${place.type}`,
   html: `
-    <span class="marker-scale" style="--marker-scale:${Math.max(0.72, markerScale * 0.92)}">
+    <span class="marker-scale">
       ${pixelIcon(place.type)}
       <b>${place.label}</b>
     </span>
   `,
   iconSize: [96, 86],
-  iconAnchor: [48, 78],
+  iconAnchor: [48, 58],
   popupAnchor: [0, -62]
 })
 
@@ -370,6 +407,7 @@ export default function NewExperience({ onBack }) {
   const [mapGestureLocked, setMapGestureLocked] = useState(false)
   const [navDragOffset, setNavDragOffset] = useState(0)
   const [navDragging, setNavDragging] = useState(false)
+  const [countdown, setCountdown] = useState(null)
   const [seconds, setSeconds] = useState(0)
   const [path, setPath] = useState([START_CENTER])
   const [message, setMessage] = useState('')
@@ -383,6 +421,7 @@ export default function NewExperience({ onBack }) {
   const dragStartX = useRef(null)
   const navDragLastTick = useRef(0)
   const navDidDrag = useRef(false)
+  const countdownTimer = useRef(null)
   const watchId = useRef(null)
   const demoTimer = useRef(null)
   const routeCursor = useRef(0)
@@ -396,8 +435,6 @@ export default function NewExperience({ onBack }) {
   const displayPath = mapMode === 'real' ? path.filter(isRealPoint) : path.filter(point => !isRealPoint(point))
   const activePage = navItems[activeNav].id
   const routeDistance = Math.max((path.length - 1) * 0.02, 0).toFixed(2)
-  const markerScale = mapMode === 'real' ? 0.56 : 0.62
-  const selfMarkerScale = markerScale * 1.08
   const visibleFacilities = visibleFacilityType ? facilityGroups[visibleFacilityType] ?? [] : []
 
   const clearTracking = () => {
@@ -450,6 +487,10 @@ export default function NewExperience({ onBack }) {
 
   useEffect(() => () => clearTracking(), [])
 
+  useEffect(() => () => {
+    if (countdownTimer.current) window.clearTimeout(countdownTimer.current)
+  }, [])
+
   useEffect(() => {
     clearTracking()
     setIsWalking(false)
@@ -460,6 +501,8 @@ export default function NewExperience({ onBack }) {
     setVisibleFacilityType(null)
     setActiveSide(null)
     setMessageOpen(false)
+    setCountdown(null)
+    if (countdownTimer.current) window.clearTimeout(countdownTimer.current)
     setSeconds(0)
     setPath([mapMode === 'real' ? START_CENTER_REAL : START_CENTER])
     setLocationStatus(mapMode === 'real' ? '现实地图已开启，路线与导航使用真实经纬度演示' : '像素地图已开启，点击 GO 开始记录路线')
@@ -521,6 +564,7 @@ export default function NewExperience({ onBack }) {
   }
 
   const startWalk = () => {
+    setCountdown(null)
     setActiveNav(2)
     setShowPublishSheet(false)
     setHasRouteDraft(true)
@@ -578,15 +622,37 @@ export default function NewExperience({ onBack }) {
     setPanelExpanded(false)
     setActivePanelDetail(null)
     if (navItems[index].id === 'go') {
+      if (countdown) return
       if (!wasActive) return
       if (isWalking) {
         pauseWalk()
       } else if (hasRouteDraft) {
         resumeWalk()
       } else {
-        startWalk()
+        beginStartCountdown()
       }
     }
+  }
+
+  const beginStartCountdown = () => {
+    if (countdown || isWalking || hasRouteDraft) return
+    const steps = [3, 2, 1]
+    const run = (stepIndex = 0) => {
+      setCountdown(steps[stepIndex])
+      triggerHaptic()
+      countdownTimer.current = window.setTimeout(() => {
+        if (stepIndex < steps.length - 1) {
+          run(stepIndex + 1)
+        } else {
+          setCountdown('GO')
+          countdownTimer.current = window.setTimeout(() => {
+            setCountdown(null)
+            startWalk()
+          }, 520)
+        }
+      }, 720)
+    }
+    run()
   }
 
   const handleSideAction = (action) => {
@@ -668,7 +734,6 @@ export default function NewExperience({ onBack }) {
     dragStartX.current = event.clientX
     navDragLastTick.current = 0
     navDidDrag.current = false
-    setNavDragging(true)
     setNavDragOffset(0)
     event.currentTarget.setPointerCapture?.(event.pointerId)
   }
@@ -677,7 +742,12 @@ export default function NewExperience({ onBack }) {
     if (dragStartX.current === null) return
     const delta = event.clientX - dragStartX.current
     const limited = Math.max(-220, Math.min(220, delta))
-    if (Math.abs(limited) > 6) navDidDrag.current = true
+    if (Math.abs(limited) <= 16 && !navDragging) return
+    navDidDrag.current = true
+    if (!navDragging) {
+      setNavDragging(true)
+      triggerHaptic()
+    }
     setNavDragOffset(limited)
     const tick = Math.trunc(limited / 43)
     if (tick !== navDragLastTick.current) {
@@ -724,10 +794,10 @@ export default function NewExperience({ onBack }) {
         <MapResizer />
         <MapZoomTracker onZoom={setZoomLevel} onGestureChange={setMapGestureLocked} />
         <MapFollower center={currentCenter} follow={isWalking} />
-        <ImageOverlay url={mapAsset('ditu-mobile.jpg')} bounds={IMAGE_BOUNDS} />
+        <PixelTileLayer />
         {guideMode && <Polyline positions={activeRoutePath.length ? activeRoutePath : routeGuidePath} color="#f4a244" weight={7} opacity={0.86} dashArray="14 10" />}
         <Polyline positions={displayPath} color="#5B4636" weight={6} opacity={0.85} />
-        <Marker key={`self-${isWalking ? 'walk' : 'idle'}-${selfMarkerScale.toFixed(2)}`} position={currentCenter} icon={createSelfIcon(selfBubble, isWalking, selfMarkerScale)}>
+        <Marker key={`self-${isWalking ? 'walk' : 'idle'}`} position={currentCenter} icon={createSelfIcon(selfBubble, isWalking)}>
           <Popup>我的宠物</Popup>
         </Marker>
         {walkers.map((walker) => {
@@ -736,7 +806,7 @@ export default function NewExperience({ onBack }) {
             <Marker
               key={`${walker.id}-${mode}-${visible}`}
               position={mapMode === 'real' ? walker.realPosition : walker.position}
-              icon={createPixelIcon(walker, !visible, visible ? walkerBubbles[walker.id] : '', markerScale, mapGestureLocked)}
+              icon={createPixelIcon(walker, !visible, visible ? walkerBubbles[walker.id] : '', mapGestureLocked)}
               interactive={!mapGestureLocked}
               eventHandlers={mapGestureLocked ? {} : {
                 click: () => {
@@ -758,7 +828,7 @@ export default function NewExperience({ onBack }) {
           <Marker
             key={place.id}
             position={mapMode === 'real' ? place.realPosition : place.position}
-            icon={createFacilityIcon(place, markerScale)}
+            icon={createFacilityIcon(place)}
             eventHandlers={{ click: () => navigateToFacility(place) }}
           />
         ))}
@@ -789,7 +859,7 @@ export default function NewExperience({ onBack }) {
         />
         {guideMode && <Polyline positions={activeRoutePath.length ? activeRoutePath : routeGuidePathReal} color="#f4a244" weight={7} opacity={0.86} dashArray="14 10" />}
         <Polyline positions={displayPath} color="#5B4636" weight={6} opacity={0.85} />
-        <Marker key={`self-real-${isWalking ? 'walk' : 'idle'}-${selfMarkerScale.toFixed(2)}`} position={currentCenter} icon={createSelfIcon(selfBubble, isWalking, selfMarkerScale)}>
+        <Marker key={`self-real-${isWalking ? 'walk' : 'idle'}`} position={currentCenter} icon={createSelfIcon(selfBubble, isWalking)}>
           <Popup>我的宠物</Popup>
         </Marker>
         {walkers.map((walker) => {
@@ -798,7 +868,7 @@ export default function NewExperience({ onBack }) {
             <Marker
               key={`real-${walker.id}-${mode}-${visible}`}
               position={walker.realPosition}
-              icon={createPixelIcon(walker, !visible, visible ? walkerBubbles[walker.id] : '', markerScale, mapGestureLocked)}
+              icon={createPixelIcon(walker, !visible, visible ? walkerBubbles[walker.id] : '', mapGestureLocked)}
               interactive={!mapGestureLocked}
               eventHandlers={mapGestureLocked ? {} : {
                 click: () => {
@@ -820,7 +890,7 @@ export default function NewExperience({ onBack }) {
           <Marker
             key={`real-${place.id}`}
             position={place.realPosition}
-            icon={createFacilityIcon(place, markerScale)}
+            icon={createFacilityIcon(place)}
             eventHandlers={{ click: () => navigateToFacility(place) }}
           />
         ))}
@@ -925,6 +995,12 @@ export default function NewExperience({ onBack }) {
 
       <div className={`new-portal-fx ${modeFx}`} />
 
+      {countdown && (
+        <section className="walk-countdown" aria-live="polite">
+          <span key={countdown}>{countdown}</span>
+        </section>
+      )}
+
       {activePage === 'go' && messageOpen && !showPublishSheet && (
         <section className="new-message-panel">
           <input
@@ -992,6 +1068,9 @@ export default function NewExperience({ onBack }) {
                 }}
               >
                 <span dangerouslySetInnerHTML={{ __html: pixelIcon(item.icon) }} />
+                {item.id === 'go' && activePage === 'go' && (isWalking || hasRouteDraft) && (
+                  <em className="go-time-glass">{displayTime}</em>
+                )}
                 <b>{item.id === 'go' && isWalking ? displayTime : item.label}</b>
                 {item.id === 'go' && activePage === 'go' && (isWalking || hasRouteDraft) && !showPublishSheet && (
                   <span className="go-liquid-actions">
