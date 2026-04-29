@@ -411,6 +411,7 @@ export default function NewExperience({ onBack }) {
   const [mode, setMode] = useState('loogo')
   const [modeFx, setModeFx] = useState('summon')
   const [activeNav, setActiveNav] = useState(2)
+  const [activePage, setActivePage] = useState('go')
   const [isWalking, setIsWalking] = useState(false)
   const [hasRouteDraft, setHasRouteDraft] = useState(false)
   const [showPublishSheet, setShowPublishSheet] = useState(false)
@@ -451,7 +452,6 @@ export default function NewExperience({ onBack }) {
     ? (isRealPoint(rawCenter) ? rawCenter : START_CENTER_REAL)
     : (isRealPoint(rawCenter) ? START_CENTER : rawCenter)
   const displayPath = mapMode === 'real' ? path.filter(isRealPoint) : path.filter(point => !isRealPoint(point))
-  const activePage = navItems[activeNav].id
   const routeDistance = Math.max((path.length - 1) * 0.02, 0).toFixed(2)
   const visibleFacilities = visibleFacilityType ? facilityGroups[visibleFacilityType] ?? [] : []
 
@@ -578,12 +578,17 @@ export default function NewExperience({ onBack }) {
   }
 
   const rotateNav = (direction) => {
-    setActiveNav(value => (value + direction + navItems.length) % navItems.length)
+    setActiveNav(value => {
+      const next = (value + direction + navItems.length) % navItems.length
+      setActivePage(navItems[next].id)
+      return next
+    })
   }
 
   const startWalk = () => {
     setCountdown(null)
     setActiveNav(2)
+    setActivePage('go')
     setShowPublishSheet(false)
     setHasRouteDraft(true)
     setIsWalking(true)
@@ -600,6 +605,7 @@ export default function NewExperience({ onBack }) {
 
   const resumeWalk = () => {
     setActiveNav(2)
+    setActivePage('go')
     setShowPublishSheet(false)
     setHasRouteDraft(true)
     setIsWalking(true)
@@ -635,11 +641,13 @@ export default function NewExperience({ onBack }) {
       navDidDrag.current = false
       return
     }
-    const wasActive = activeNav === index
-    setActiveNav(index)
+    const itemId = navItems[index].id
+    const wasActive = activePage === itemId
+    setActivePage(itemId)
     setPanelExpanded(false)
     setActivePanelDetail(null)
-    if (navItems[index].id === 'go') {
+    if (itemId === 'go') {
+      setActiveNav(2)
       if (countdown) return
       if (!wasActive) return
       if (isWalking) {
@@ -788,7 +796,11 @@ export default function NewExperience({ onBack }) {
     if (!navDidDrag.current || Math.abs(delta) < 56) return
     const steps = Math.max(-2, Math.min(2, Math.round(-delta / 86)))
     if (steps !== 0) {
-      setActiveNav(value => (value + steps + navItems.length) % navItems.length)
+      setActiveNav(value => {
+        const next = (value + steps + navItems.length) % navItems.length
+        setActivePage(navItems[next].id)
+        return next
+      })
       triggerHaptic()
     }
   }
@@ -937,14 +949,14 @@ export default function NewExperience({ onBack }) {
           role="button"
           tabIndex={0}
           onClick={() => {
-            setActiveNav(4)
+            setActivePage('mine')
             setPanelExpanded(true)
             setActivePanelDetail(null)
           }}
           onKeyDown={(event) => {
             if (event.key === 'Enter' || event.key === ' ') {
               event.preventDefault()
-              setActiveNav(4)
+              setActivePage('mine')
               setPanelExpanded(true)
               setActivePanelDetail(null)
             }
@@ -1084,7 +1096,7 @@ export default function NewExperience({ onBack }) {
               <button
                 key={item.id}
                 onClick={() => handleNavClick(index)}
-                className={`new-loop-item offset-${baseOffset} ${baseOffset === 0 ? 'active' : ''} ${item.id === 'go' ? 'go' : ''} ${item.id === 'go' && (isWalking || hasRouteDraft) ? 'route-active' : ''}`}
+                className={`new-loop-item offset-${baseOffset} ${item.id === activePage ? 'active' : ''} ${item.id === 'go' ? 'go' : ''} ${item.id === 'go' && (isWalking || hasRouteDraft) ? 'route-active' : ''}`}
                 style={{
                   '--x': `${offset * 86}px`,
                   '--scale': Math.max(0.56, 1 - Math.abs(offset) * 0.14),
@@ -1176,7 +1188,10 @@ export default function NewExperience({ onBack }) {
               <div className="panel-extra">
                 <p>地图会留在后面，点横杠可以收起或展开内容面板。</p>
                 <button onClick={() => setPanelExpanded(true)}>展开更多内容</button>
-                <button onClick={() => setActiveNav(2)}>回到 GO 地图</button>
+                <button onClick={() => {
+                  setActiveNav(2)
+                  setActivePage('go')
+                }}>回到 GO 地图</button>
               </div>
             </>
           )}
