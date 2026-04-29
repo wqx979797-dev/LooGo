@@ -750,6 +750,7 @@ export default function NewExperience({ onBack }) {
 
   const handleDragStart = (event) => {
     if (event.button !== undefined && event.button !== 0) return
+    if (event.target?.closest?.('.new-loop-item, .go-liquid-actions, .go-action')) return
     dragStartX.current = event.clientX
     navPointerId.current = event.pointerId
     navDragLastTick.current = 0

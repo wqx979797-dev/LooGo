@@ -6149,7 +6149,8 @@ html, body, #root { background: #f4f8e6 !important; }
 }
 
 .new-loop-item:active {
-  transform: translateX(var(--x)) translateY(2px) scale(calc(var(--scale) * 0.96)) !important;
+  transform: translateX(var(--x)) scale(var(--scale)) !important;
+  filter: brightness(0.98) saturate(1.04) !important;
 }
 
 .new-experience.nav-is-dragging .new-loop-item:active {
