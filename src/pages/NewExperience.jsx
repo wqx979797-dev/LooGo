@@ -644,10 +644,10 @@ export default function NewExperience({ onBack }) {
     const itemId = navItems[index].id
     const wasActive = activePage === itemId
     setActivePage(itemId)
+    setActiveNav(index)
     setPanelExpanded(false)
     setActivePanelDetail(null)
     if (itemId === 'go') {
-      setActiveNav(2)
       if (countdown) return
       if (!wasActive) return
       if (isWalking) {
@@ -950,6 +950,7 @@ export default function NewExperience({ onBack }) {
           tabIndex={0}
           onClick={() => {
             setActivePage('mine')
+            setActiveNav(4)
             setPanelExpanded(true)
             setActivePanelDetail(null)
           }}
@@ -957,6 +958,7 @@ export default function NewExperience({ onBack }) {
             if (event.key === 'Enter' || event.key === ' ') {
               event.preventDefault()
               setActivePage('mine')
+              setActiveNav(4)
               setPanelExpanded(true)
               setActivePanelDetail(null)
             }
